@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: layup-python
+Version: 0.1.0
+Summary: Parse Python packages and export their structure as Layup diagram JSON
+License: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: click>=8.0
+Requires-Dist: jsonschema>=4.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+
+# Pi Template
+
+Empty project template for the [Pi](https://pi.dev) coding agent.

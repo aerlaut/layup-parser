@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+layup_python/__init__.py
+layup_python/_schema_path.py
+layup_python.egg-info/PKG-INFO
+layup_python.egg-info/SOURCES.txt
+layup_python.egg-info/dependency_links.txt
+layup_python.egg-info/entry_points.txt
+layup_python.egg-info/requires.txt
+layup_python.egg-info/top_level.txt
+layup_python/emitter/__init__.py
+layup_python/layout/__init__.py
+layup_python/parser/__init__.py

@@ -1,0 +1,2 @@
+[console_scripts]
+layup-parse = layup_python.cli:main

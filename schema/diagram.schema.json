@@ -1,0 +1,482 @@
+{
+  "$ref": "#/definitions/DiagramState",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Annotation": {
+      "additionalProperties": false,
+      "description": "A free-floating annotative element. Annotations are stored separately from C4 nodes and are never subject to boundary grouping, overlap resolution, or drill-down navigation. They can be placed anywhere on the canvas.",
+      "properties": {
+        "color": {
+          "description": "Custom color (hex)",
+          "type": "string"
+        },
+        "height": {
+          "description": "Explicit pixel height (for group boundary box)",
+          "type": "number"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "position": {
+          "additionalProperties": false,
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "text": {
+          "description": "Body text — used by \"note\" (post-it) annotations",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/AnnotationType"
+        },
+        "width": {
+          "description": "Explicit pixel width (for group boundary box)",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "label",
+        "position"
+      ],
+      "type": "object"
+    },
+    "AnnotationType": {
+      "description": "Types for free-floating annotative elements that are not part of the C4 hierarchy",
+      "enum": [
+        "group",
+        "note",
+        "package"
+      ],
+      "type": "string"
+    },
+    "C4Edge": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "description": "Custom color (hex) for this edge; uses default gray if omitted",
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "lineStyle": {
+          "$ref": "#/definitions/LineStyle"
+        },
+        "lineType": {
+          "$ref": "#/definitions/LineType"
+        },
+        "markerEnd": {
+          "$ref": "#/definitions/MarkerType"
+        },
+        "markerStart": {
+          "$ref": "#/definitions/MarkerType"
+        },
+        "multiplicitySource": {
+          "description": "UML multiplicity label at the source end, e.g. \"1\", \"0..*\"",
+          "type": "string"
+        },
+        "multiplicityTarget": {
+          "description": "UML multiplicity label at the target end, e.g. \"1\", \"0..*\"",
+          "type": "string"
+        },
+        "roleSource": {
+          "description": "UML role name at the source end",
+          "type": "string"
+        },
+        "roleTarget": {
+          "description": "UML role name at the target end",
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "sourceGroupId": {
+          "description": "Set when source node is in a different group (cross-group edge)",
+          "type": "string"
+        },
+        "sourceHandle": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "targetGroupId": {
+          "description": "Set when target node is in a different group (cross-group edge)",
+          "type": "string"
+        },
+        "targetHandle": {
+          "type": "string"
+        },
+        "technology": {
+          "type": "string"
+        },
+        "waypoints": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "source",
+        "target"
+      ],
+      "type": "object"
+    },
+    "C4LevelType": {
+      "enum": [
+        "context",
+        "container",
+        "component",
+        "code"
+      ],
+      "type": "string"
+    },
+    "C4Node": {
+      "additionalProperties": false,
+      "properties": {
+        "childDiagramId": {
+          "description": "ID of the child DiagramLevel this node drills into",
+          "type": "string"
+        },
+        "color": {
+          "description": "Custom color (hex) for this node; uses type default if omitted",
+          "type": "string"
+        },
+        "columns": {
+          "description": "ERD table columns. Only meaningful for erd-table / erd-view node types.",
+          "items": {
+            "$ref": "#/definitions/TableColumn"
+          },
+          "type": "array"
+        },
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "members": {
+          "description": "UML class members (attributes and operations). Only meaningful for UML Code-layer node types.",
+          "items": {
+            "$ref": "#/definitions/ClassMember"
+          },
+          "type": "array"
+        },
+        "position": {
+          "additionalProperties": false,
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "technology": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/C4NodeType"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "label",
+        "position"
+      ],
+      "type": "object"
+    },
+    "C4NodeType": {
+      "enum": [
+        "person",
+        "external-person",
+        "system",
+        "external-system",
+        "container",
+        "database",
+        "component",
+        "class",
+        "abstract-class",
+        "interface",
+        "enum",
+        "record",
+        "erd-table",
+        "erd-view"
+      ],
+      "type": "string"
+    },
+    "ClassMember": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "isAbstract": {
+          "type": "boolean"
+        },
+        "isStatic": {
+          "type": "boolean"
+        },
+        "kind": {
+          "enum": [
+            "attribute",
+            "operation"
+          ],
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "params": {
+          "description": "Parameter list string for operations, e.g. \"(x: int, y: string)\"",
+          "type": "string"
+        },
+        "type": {
+          "description": "Field type (attributes) or return type (operations)",
+          "type": "string"
+        },
+        "visibility": {
+          "$ref": "#/definitions/MemberVisibility"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "visibility",
+        "name"
+      ],
+      "type": "object"
+    },
+    "DiagramLevel": {
+      "additionalProperties": false,
+      "properties": {
+        "annotations": {
+          "description": "Free-floating annotative elements (groups, notes). Never affect C4 hierarchy.",
+          "items": {
+            "$ref": "#/definitions/Annotation"
+          },
+          "type": "array"
+        },
+        "edges": {
+          "items": {
+            "$ref": "#/definitions/C4Edge"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "description": "Label shown in breadcrumb and toolbar",
+          "type": "string"
+        },
+        "level": {
+          "$ref": "#/definitions/C4LevelType"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/definitions/C4Node"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "label",
+        "nodes",
+        "edges",
+        "annotations"
+      ],
+      "type": "object"
+    },
+    "DiagramState": {
+      "additionalProperties": false,
+      "properties": {
+        "diagrams": {
+          "additionalProperties": {
+            "$ref": "#/definitions/DiagramLevel"
+          },
+          "description": "Flat map of all diagram levels by ID",
+          "type": "object"
+        },
+        "navigationStack": {
+          "description": "Current navigation stack — last element is the active diagram",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "pendingNodeType": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PaletteItemType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "If true, user is in \"pending place\" mode after clicking palette"
+        },
+        "rootId": {
+          "description": "Root diagram ID (always the Context-level diagram)",
+          "type": "string"
+        },
+        "selectedId": {
+          "description": "Currently selected node or edge ID, or null",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "version",
+        "diagrams",
+        "rootId",
+        "navigationStack",
+        "selectedId",
+        "pendingNodeType"
+      ],
+      "type": "object"
+    },
+    "LineStyle": {
+      "enum": [
+        "solid",
+        "dashed",
+        "dotted"
+      ],
+      "type": "string"
+    },
+    "LineType": {
+      "enum": [
+        "bezier",
+        "straight",
+        "step",
+        "smoothstep"
+      ],
+      "type": "string"
+    },
+    "MarkerType": {
+      "enum": [
+        "arrow",
+        "dot",
+        "none",
+        "open-arrow",
+        "hollow-triangle",
+        "hollow-diamond",
+        "filled-diamond"
+      ],
+      "type": "string"
+    },
+    "MemberVisibility": {
+      "enum": [
+        "+",
+        "-",
+        "#",
+        "~"
+      ],
+      "type": "string"
+    },
+    "PaletteItemType": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/C4NodeType"
+        },
+        {
+          "$ref": "#/definitions/AnnotationType"
+        }
+      ],
+      "description": "Combined type used by the palette and pending-placement state"
+    },
+    "TableColumn": {
+      "additionalProperties": false,
+      "properties": {
+        "dataType": {
+          "description": "SQL data type string, e.g. \"INT\", \"VARCHAR(255)\", \"TIMESTAMP\"",
+          "type": "string"
+        },
+        "defaultValue": {
+          "description": "SQL DEFAULT expression, e.g. \"NOW()\", \"'active'\"",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "isForeignKey": {
+          "type": "boolean"
+        },
+        "isNullable": {
+          "description": "Whether the column accepts NULL values (defaults to true when omitted)",
+          "type": "boolean"
+        },
+        "isPrimaryKey": {
+          "type": "boolean"
+        },
+        "isUnique": {
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Column name, e.g. \"user_id\"",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "dataType"
+      ],
+      "type": "object"
+    }
+  }
+}
