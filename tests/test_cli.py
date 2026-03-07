@@ -1,0 +1,120 @@
+"""Tests for the CLI (layup-parse)."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+from click.testing import CliRunner
+
+from layup_python._schema_path import SCHEMA_PATH
+from layup_python.cli import main
+
+FIXTURES = Path(__file__).parent / "fixtures"
+SAMPLE_PKG = FIXTURES / "sample_pkg"
+
+with SCHEMA_PATH.open() as _f:
+    _SCHEMA = json.load(_f)
+
+
+@pytest.fixture
+def runner():
+    return CliRunner()
+
+
+class TestCliBasicUsage:
+    def test_stdout_output(self, runner):
+        result = runner.invoke(main, [str(SAMPLE_PKG)])
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "version" in data
+
+    def test_stdout_is_valid_json(self, runner):
+        result = runner.invoke(main, [str(SAMPLE_PKG)])
+        assert result.exit_code == 0
+        json.loads(result.output)  # must not raise
+
+    def test_stdout_validates_against_schema(self, runner):
+        import jsonschema
+
+        result = runner.invoke(main, [str(SAMPLE_PKG)])
+        data = json.loads(result.output)
+        jsonschema.validate(data, _SCHEMA)
+
+    def test_output_flag_writes_file(self, runner, tmp_path):
+        out = tmp_path / "out.json"
+        result = runner.invoke(main, [str(SAMPLE_PKG), "-o", str(out)])
+        assert result.exit_code == 0
+        assert out.is_file()
+        data = json.loads(out.read_text())
+        assert "version" in data
+
+    def test_output_flag_no_json_on_stdout(self, runner, tmp_path):
+        out = tmp_path / "out.json"
+        result = runner.invoke(main, [str(SAMPLE_PKG), "-o", str(out)])
+        # When writing to a file, stdout must not contain the JSON payload
+        try:
+            json.loads(result.output)
+            assert False, "Expected no JSON on stdout when -o is used"
+        except json.JSONDecodeError:
+            pass  # good — output is not JSON
+
+    def test_written_to_message_in_output(self, runner, tmp_path):
+        out = tmp_path / "out.json"
+        # CliRunner mixes stderr into output by default
+        result = runner.invoke(main, [str(SAMPLE_PKG), "-o", str(out)])
+        assert "Written to" in result.output
+
+
+class TestCliOptions:
+    def test_root_label(self, runner):
+        result = runner.invoke(main, [str(SAMPLE_PKG), "--root-label", "My Diagram"])
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        root = data["diagrams"][data["rootId"]]
+        assert root["label"] == "My Diagram"
+
+    def test_indent_option(self, runner):
+        result = runner.invoke(main, [str(SAMPLE_PKG), "--indent", "4"])
+        assert result.exit_code == 0
+        # 4-space indent lines present
+        assert '    "' in result.output
+
+    def test_no_validate_flag(self, runner):
+        result = runner.invoke(main, [str(SAMPLE_PKG), "--no-validate"])
+        assert result.exit_code == 0
+
+    def test_ignore_option(self, runner):
+        result = runner.invoke(
+            main, [str(SAMPLE_PKG), "--ignore", "subpkg"]
+        )
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        # No diagrams from subpkg
+        diagram_ids = set(data["diagrams"].keys())
+        assert not any("subpkg" in did for did in diagram_ids)
+
+    def test_ignore_repeatable(self, runner):
+        result = runner.invoke(
+            main,
+            [str(SAMPLE_PKG), "--ignore", "subpkg", "--ignore", "__pycache__"],
+        )
+        assert result.exit_code == 0
+
+
+class TestCliErrors:
+    def test_nonexistent_path(self, runner):
+        result = runner.invoke(main, ["/nonexistent/path/abc"])
+        assert result.exit_code != 0
+
+    def test_non_package_path(self, runner):
+        # FIXTURES dir has no __init__.py → ValueError from walker
+        result = runner.invoke(main, [str(FIXTURES)])
+        assert result.exit_code == 1
+        assert "Error:" in result.output or result.exit_code == 1
+
+    def test_help_flag(self, runner):
+        result = runner.invoke(main, ["--help"])
+        assert result.exit_code == 0
+        assert "PATH" in result.output
