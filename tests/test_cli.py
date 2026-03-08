@@ -105,6 +105,25 @@ class TestCliOptions:
         assert result.exit_code == 0
 
 
+class TestCliLangOption:
+    def test_explicit_python_lang(self, runner):
+        result = runner.invoke(main, [str(SAMPLE_PKG), "--lang", "python"])
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "version" in data
+
+    def test_unsupported_lang_rejected_by_click(self, runner):
+        """Click's Choice type should reject unknown languages before parse_package runs."""
+        result = runner.invoke(main, [str(SAMPLE_PKG), "--lang", "cobol"])
+        assert result.exit_code != 0
+        assert "cobol" in result.output or "Invalid value" in result.output
+
+    def test_lang_in_help(self, runner):
+        result = runner.invoke(main, ["--help"])
+        assert result.exit_code == 0
+        assert "--lang" in result.output
+
+
 class TestCliErrors:
     def test_nonexistent_path(self, runner):
         result = runner.invoke(main, ["/nonexistent/path/abc"])

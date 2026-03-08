@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from layup_python.models import MemberKind, MemberVisibility, NodeType, ParsedModule
-from layup_python.parser.extractor import extract_module
+from layup_python.parser.python.extractor import extract_module
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sample_pkg"
 

@@ -122,6 +122,31 @@ class TestParsePackageToFile:
         assert output.is_file()
 
 
+class TestParsePackageLang:
+    def test_explicit_python_lang(self):
+        """Passing lang='python' explicitly must work identically to the default."""
+        result = parse_package(SAMPLE_PKG, lang="python")
+        assert isinstance(result, dict)
+        assert result["currentLevel"] == "component"
+
+    def test_unsupported_lang_raises(self):
+        with pytest.raises(ValueError, match="Unsupported language"):
+            parse_package(SAMPLE_PKG, lang="cobol")
+
+    def test_lang_forwarded_to_file(self, tmp_path):
+        """parse_package_to_file must forward lang to parse_package."""
+        output = tmp_path / "out.json"
+        parse_package_to_file(SAMPLE_PKG, output, lang="python")
+        assert output.is_file()
+        data = json.loads(output.read_text())
+        assert "version" in data
+
+    def test_unsupported_lang_to_file_raises(self, tmp_path):
+        output = tmp_path / "out.json"
+        with pytest.raises(ValueError, match="Unsupported language"):
+            parse_package_to_file(SAMPLE_PKG, output, lang="cobol")
+
+
 class TestPublicExports:
     def test_parse_package_exported(self):
         assert hasattr(layup_python, "parse_package")
