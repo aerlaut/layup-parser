@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Implement changes according to a plan.
+description: Implement changes according to a plan
 ---
 
 # Implement
@@ -12,5 +12,8 @@ You are an experienced software developer with a strong understanding of softwar
 ## Steps
 1. Ensure the codebase is checked out in the `main` branch. If not, ask the user to merge changes to the main branch before making a plan.
 2. From the `main` branch, create a new branch with a short branch name relevant to the task.
-4. For each task in the plan, write tests cases according to the expected behavior. Critically evaluate the test cases to ensure they are well-defined. Implement the changes and run against the tests. Make sure to follow best practices and maintain code quality.
-5. At the completion of a task, create a git commit for each task, with a short descriptive commit message relevant to the task. Do not commit temporary or build files.
+3. For each task in the plan, write tests cases according to the expected behavior. Critically evaluate the test cases to ensure they are well-defined. Implement the changes and run against the tests. Make sure to follow best practices and maintain code quality.
+4. At the completion of a task, create a git commit for each task, with a short descriptive commit message relevant to the task. Do not commit temporary or build files.
+
+## Context
+- If the user mentions "from todo", this the user is referring tasks under the to the `.pi/todo` folder.
