@@ -112,18 +112,10 @@
         "source": {
           "type": "string"
         },
-        "sourceGroupId": {
-          "description": "Set when source node is in a different group (cross-group edge)",
-          "type": "string"
-        },
         "sourceHandle": {
           "type": "string"
         },
         "target": {
-          "type": "string"
-        },
-        "targetGroupId": {
-          "description": "Set when target node is in a different group (cross-group edge)",
           "type": "string"
         },
         "targetHandle": {
@@ -171,10 +163,6 @@
     "C4Node": {
       "additionalProperties": false,
       "properties": {
-        "childDiagramId": {
-          "description": "ID of the child DiagramLevel this node drills into",
-          "type": "string"
-        },
         "color": {
           "description": "Custom color (hex) for this node; uses type default if omitted",
           "type": "string"
@@ -201,6 +189,10 @@
             "$ref": "#/definitions/ClassMember"
           },
           "type": "array"
+        },
+        "parentNodeId": {
+          "description": "ID of the owning node at the level above; absent at context level",
+          "type": "string"
         },
         "position": {
           "additionalProperties": false,
@@ -241,6 +233,7 @@
         "external-system",
         "container",
         "database",
+        "db-schema",
         "component",
         "class",
         "abstract-class",
@@ -310,13 +303,6 @@
           },
           "type": "array"
         },
-        "id": {
-          "type": "string"
-        },
-        "label": {
-          "description": "Label shown in breadcrumb and toolbar",
-          "type": "string"
-        },
         "level": {
           "$ref": "#/definitions/C4LevelType"
         },
@@ -328,9 +314,7 @@
         }
       },
       "required": [
-        "id",
         "level",
-        "label",
         "nodes",
         "edges",
         "annotations"
@@ -340,19 +324,34 @@
     "DiagramState": {
       "additionalProperties": false,
       "properties": {
-        "diagrams": {
-          "additionalProperties": {
-            "$ref": "#/definitions/DiagramLevel"
-          },
-          "description": "Flat map of all diagram levels by ID",
-          "type": "object"
+        "currentLevel": {
+          "$ref": "#/definitions/C4LevelType",
+          "description": "The currently visible level"
         },
-        "navigationStack": {
-          "description": "Current navigation stack — last element is the active diagram",
-          "items": {
-            "type": "string"
+        "levels": {
+          "additionalProperties": false,
+          "description": "Four fixed levels keyed by C4LevelType",
+          "properties": {
+            "code": {
+              "$ref": "#/definitions/DiagramLevel"
+            },
+            "component": {
+              "$ref": "#/definitions/DiagramLevel"
+            },
+            "container": {
+              "$ref": "#/definitions/DiagramLevel"
+            },
+            "context": {
+              "$ref": "#/definitions/DiagramLevel"
+            }
           },
-          "type": "array"
+          "required": [
+            "context",
+            "container",
+            "component",
+            "code"
+          ],
+          "type": "object"
         },
         "pendingNodeType": {
           "anyOf": [
@@ -364,10 +363,6 @@
             }
           ],
           "description": "If true, user is in \"pending place\" mode after clicking palette"
-        },
-        "rootId": {
-          "description": "Root diagram ID (always the Context-level diagram)",
-          "type": "string"
         },
         "selectedId": {
           "description": "Currently selected node or edge ID, or null",
@@ -382,9 +377,8 @@
       },
       "required": [
         "version",
-        "diagrams",
-        "rootId",
-        "navigationStack",
+        "levels",
+        "currentLevel",
         "selectedId",
         "pendingNodeType"
       ],
