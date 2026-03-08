@@ -32,15 +32,13 @@ class TestParsePackage:
         result = parse_package(SAMPLE_PKG)
         jsonschema.validate(result, _SCHEMA)
 
-    def test_root_label_default(self):
+    def test_current_level_is_component(self):
         result = parse_package(SAMPLE_PKG)
-        root_diag = result["diagrams"][result["rootId"]]
-        assert root_diag["label"] == "sample_pkg"
+        assert result["currentLevel"] == "component"
 
-    def test_custom_root_label(self):
-        result = parse_package(SAMPLE_PKG, root_label="My Package")
-        root_diag = result["diagrams"][result["rootId"]]
-        assert root_diag["label"] == "My Package"
+    def test_four_fixed_levels(self):
+        result = parse_package(SAMPLE_PKG)
+        assert set(result["levels"].keys()) == {"context", "container", "component", "code"}
 
     def test_invalid_path_raises(self):
         with pytest.raises(ValueError):
@@ -50,31 +48,22 @@ class TestParsePackage:
         with pytest.raises(ValueError):
             parse_package(FIXTURES)  # no __init__.py
 
-    def test_contains_module_diagrams(self):
+    def test_contains_module_nodes(self):
         result = parse_package(SAMPLE_PKG)
-        diag_ids = set(result["diagrams"].keys())
-        # Root + one per module
-        assert len(diag_ids) > 1
+        # Component level should have at least one module node
+        assert len(result["levels"]["component"]["nodes"]) > 0
 
     def test_classes_extracted(self):
         result = parse_package(SAMPLE_PKG)
-        # Find the animals module diagram and check classes are present
-        code_diags = [
-            d for d in result["diagrams"].values()
-            if d["level"] == "code"
-        ]
-        all_labels = {n["label"] for d in code_diags for n in d["nodes"]}
+        # All class nodes are in the unified code level
+        all_labels = {n["label"] for n in result["levels"]["code"]["nodes"]}
         assert "Dog" in all_labels
         assert "Animal" in all_labels
         assert "AnimalKind" in all_labels
 
     def test_inheritance_edges_present(self):
         result = parse_package(SAMPLE_PKG)
-        all_edges = [
-            e
-            for d in result["diagrams"].values()
-            for e in d["edges"]
-        ]
+        all_edges = result["levels"]["code"]["edges"]
         assert len(all_edges) > 0
 
     def test_validate_false_skips_schema_check(self):

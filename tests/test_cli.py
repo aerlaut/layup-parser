@@ -69,11 +69,12 @@ class TestCliBasicUsage:
 
 class TestCliOptions:
     def test_root_label(self, runner):
+        # root_label is accepted but silently ignored in v2 (DiagramLevel has no label)
         result = runner.invoke(main, [str(SAMPLE_PKG), "--root-label", "My Diagram"])
         assert result.exit_code == 0
         data = json.loads(result.output)
-        root = data["diagrams"][data["rootId"]]
-        assert root["label"] == "My Diagram"
+        assert "levels" in data
+        assert data["currentLevel"] == "component"
 
     def test_indent_option(self, runner):
         result = runner.invoke(main, [str(SAMPLE_PKG), "--indent", "4"])
@@ -91,9 +92,10 @@ class TestCliOptions:
         )
         assert result.exit_code == 0
         data = json.loads(result.output)
-        # No diagrams from subpkg
-        diagram_ids = set(data["diagrams"].keys())
-        assert not any("subpkg" in did for did in diagram_ids)
+        # No nodes from subpkg in component or code levels
+        component_ids = {n["id"] for n in data["levels"]["component"]["nodes"]}
+        code_ids = {n["id"] for n in data["levels"]["code"]["nodes"]}
+        assert not any("subpkg" in nid for nid in component_ids | code_ids)
 
     def test_ignore_repeatable(self, runner):
         result = runner.invoke(

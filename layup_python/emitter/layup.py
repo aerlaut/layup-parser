@@ -5,20 +5,24 @@ resolved :class:`~layup_python.models.InheritanceEdge` objects and layout
 positions, and returns a Python dict that validates against
 ``schema/diagram.schema.json``.
 
-Output structure
-----------------
+Output structure (v2)
+---------------------
 ::
 
     DiagramState
-    ├── rootId        → "root"
-    ├── diagrams
-    │   ├── "root"   (component level — one node per module)
-    │   └── "<mod_id>"  (code level — one node per class, edges for same-module inheritance)
-    └── navigationStack → ["root"]
+    ├── version        → 2
+    ├── currentLevel   → "component"
+    ├── selectedId     → null
+    ├── pendingNodeType→ null
+    └── levels
+        ├── "context"   (empty DiagramLevel)
+        ├── "container" (empty DiagramLevel)
+        ├── "component" (one node per module)
+        └── "code"      (one node per class with parentNodeId; same-module edges)
 
-Cross-module inheritance edges are **not rendered** in v1 (they are returned
-as warnings by the relationship resolver and should be surfaced to the user
-via the CLI / API).
+Cross-module inheritance edges are **not rendered** (they are returned as
+warnings by the relationship resolver and should be surfaced to the user via
+the CLI / API).
 """
 
 from __future__ import annotations
@@ -44,14 +48,13 @@ from layup_python.models import (
 # Constants / mappings
 # ---------------------------------------------------------------------------
 
-ROOT_DIAGRAM_ID = "root"
-
 # Map our NodeType enum to Layup's C4NodeType strings
 _NODE_TYPE_MAP: dict[NodeType, str] = {
     NodeType.CLASS: "class",
     NodeType.ABSTRACT_CLASS: "abstract-class",
     NodeType.INTERFACE: "interface",
     NodeType.ENUM: "enum",
+    NodeType.RECORD: "record",
 }
 
 # UML inheritance arrow: open hollow triangle at the parent end
@@ -87,7 +90,12 @@ def _serialise_member(member: ParsedMember) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _serialise_class_node(cls: ParsedClass, position: Position, child_diagram_id: str | None = None) -> dict:
+def _serialise_class_node(
+    cls: ParsedClass,
+    position: Position,
+    parent_node_id: str | None = None,
+) -> dict:
+    """Emit a UML class node for the code level."""
     node: dict = {
         "id": cls.id,
         "type": _NODE_TYPE_MAP[cls.node_type],
@@ -96,20 +104,19 @@ def _serialise_class_node(cls: ParsedClass, position: Position, child_diagram_id
     }
     if cls.members:
         node["members"] = [_serialise_member(m) for m in cls.members]
-    if child_diagram_id is not None:
-        node["childDiagramId"] = child_diagram_id
+    if parent_node_id is not None:
+        node["parentNodeId"] = parent_node_id
     return node
 
 
 def _serialise_module_node(mod: ParsedModule, position: Position) -> dict:
-    """Emit a 'component' node on the root diagram representing one module."""
+    """Emit a 'component' node on the component level representing one module."""
     return {
         "id": mod.id,
         "type": "component",
         "label": mod.name,
         "description": mod.file_path,
         "position": position.to_dict(),
-        "childDiagramId": mod.id,  # drills into the module's code diagram
     }
 
 
@@ -129,52 +136,69 @@ def _serialise_inheritance_edge(edge: InheritanceEdge) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Diagram-level builders
+# Level builders
 # ---------------------------------------------------------------------------
 
 
-def _build_root_diagram(
+def _empty_level(level_key: str) -> dict:
+    """Build an empty DiagramLevel dict for the given level key."""
+    return {
+        "level": level_key,
+        "nodes": [],
+        "edges": [],
+        "annotations": [],
+    }
+
+
+def _build_component_level(
     package: ParsedPackage,
-    root_label: str,
     module_positions: dict[str, Position],
 ) -> dict:
-    """Build the component-level root DiagramLevel."""
+    """Build the component-level DiagramLevel (one node per module)."""
     nodes = [
         _serialise_module_node(mod, module_positions[mod.id])
         for mod in package.modules
         if mod.id in module_positions
     ]
     return {
-        "id": ROOT_DIAGRAM_ID,
         "level": "component",
-        "label": root_label,
         "nodes": nodes,
         "edges": [],
         "annotations": [],
     }
 
 
-def _build_module_diagram(
-    mod: ParsedModule,
-    same_module_edges: list[InheritanceEdge],
-    class_positions: dict[str, Position],
+def _build_code_level(
+    package: ParsedPackage,
+    same_module_edges_by_mod: dict[str, list[InheritanceEdge]],
+    class_positions_by_mod: dict[str, dict[str, Position]],
 ) -> dict:
-    """Build the code-level DiagramLevel for one module."""
-    nodes = [
-        _serialise_class_node(cls, class_positions[cls.id])
-        for cls in mod.classes
-        if cls.id in class_positions
-    ]
-    edges = [
-        _serialise_inheritance_edge(e)
-        for e in same_module_edges
-    ]
+    """Build a unified code-level DiagramLevel across all modules.
+
+    Each class node carries ``parentNodeId`` set to its owning module's id.
+    Only same-module inheritance edges are included.
+    """
+    all_nodes: list[dict] = []
+    all_edges: list[dict] = []
+
+    for mod in package.modules:
+        class_positions = class_positions_by_mod.get(mod.id, {})
+        for cls in mod.classes:
+            if cls.id in class_positions:
+                all_nodes.append(
+                    _serialise_class_node(
+                        cls,
+                        class_positions[cls.id],
+                        parent_node_id=mod.id,
+                    )
+                )
+        for edge in same_module_edges_by_mod.get(mod.id, []):
+            all_edges.append(_serialise_inheritance_edge(edge))
+
     return {
-        "id": mod.id,
         "level": "code",
-        "label": mod.name,
-        "nodes": nodes,
-        "edges": edges,
+        "nodes": all_nodes,
+        "edges": all_edges,
         "annotations": [],
     }
 
@@ -190,7 +214,7 @@ def emit_diagram_state(
     *,
     root_label: str | None = None,
 ) -> dict:
-    """Build a Layup-compatible ``DiagramState`` dict.
+    """Build a Layup-compatible ``DiagramState`` dict (v2 schema).
 
     Parameters
     ----------
@@ -201,16 +225,14 @@ def emit_diagram_state(
         relationship resolver.  Cross-module edges are automatically excluded
         from rendering.
     root_label:
-        Optional label for the root component diagram.  Defaults to the
-        package name.
+        Unused in v2 (DiagramLevel no longer has a label field). Kept for
+        backwards-compatible call sites; the argument is silently ignored.
 
     Returns
     -------
     dict
         A Python dict representing a valid ``DiagramState`` JSON object.
     """
-    label = root_label or package.name
-
     # --- Layout ---
     module_positions = layout_modules(package.modules)
 
@@ -220,30 +242,29 @@ def emit_diagram_state(
     }
     for edge in edges:
         if not edge.cross_module:
-            # Determine which module this edge belongs to (source's module)
-            # Find source class
             for mod in package.modules:
                 if any(cls.id == edge.source_id for cls in mod.classes):
                     same_module_edges_by_mod[mod.id].append(edge)
                     break
 
-    # --- Diagrams map ---
-    diagrams: dict[str, dict] = {}
-
-    # Root diagram
-    diagrams[ROOT_DIAGRAM_ID] = _build_root_diagram(package, label, module_positions)
-
-    # Per-module code diagrams
+    # Layout classes per module (positions merged into the unified code level)
+    class_positions_by_mod: dict[str, dict[str, Position]] = {}
     for mod in package.modules:
         mod_edges = same_module_edges_by_mod.get(mod.id, [])
-        class_positions = layout_classes(mod.classes, mod_edges)
-        diagrams[mod.id] = _build_module_diagram(mod, mod_edges, class_positions)
+        class_positions_by_mod[mod.id] = layout_classes(mod.classes, mod_edges)
+
+    # --- Assemble levels ---
+    levels = {
+        "context": _empty_level("context"),
+        "container": _empty_level("container"),
+        "component": _build_component_level(package, module_positions),
+        "code": _build_code_level(package, same_module_edges_by_mod, class_positions_by_mod),
+    }
 
     return {
         "version": SCHEMA_VERSION,
-        "rootId": ROOT_DIAGRAM_ID,
-        "navigationStack": [ROOT_DIAGRAM_ID],
+        "currentLevel": "component",
         "selectedId": None,
         "pendingNodeType": None,
-        "diagrams": diagrams,
+        "levels": levels,
     }

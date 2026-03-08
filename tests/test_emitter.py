@@ -1,4 +1,4 @@
-"""Tests for the Layup DiagramState emitter."""
+"""Tests for the Layup DiagramState emitter (v2 schema)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import jsonschema
 import pytest
 
 from layup_python._schema_path import SCHEMA_PATH, SCHEMA_VERSION
-from layup_python.emitter.layup import ROOT_DIAGRAM_ID, emit_diagram_state
+from layup_python.emitter.layup import emit_diagram_state
 from layup_python.models import (
     InheritanceEdge,
     MemberKind,
@@ -99,11 +99,8 @@ class TestDiagramStateStructure:
     def test_version(self):
         assert self.state["version"] == SCHEMA_VERSION
 
-    def test_root_id(self):
-        assert self.state["rootId"] == ROOT_DIAGRAM_ID
-
-    def test_navigation_stack(self):
-        assert self.state["navigationStack"] == [ROOT_DIAGRAM_ID]
+    def test_current_level_is_component(self):
+        assert self.state["currentLevel"] == "component"
 
     def test_selected_id_null(self):
         assert self.state["selectedId"] is None
@@ -111,115 +108,144 @@ class TestDiagramStateStructure:
     def test_pending_node_type_null(self):
         assert self.state["pendingNodeType"] is None
 
-    def test_diagrams_key_present(self):
-        assert "diagrams" in self.state
+    def test_levels_key_present(self):
+        assert "levels" in self.state
 
-    def test_root_diagram_in_diagrams(self):
-        assert ROOT_DIAGRAM_ID in self.state["diagrams"]
+    def test_four_fixed_levels(self):
+        assert set(self.state["levels"].keys()) == {"context", "container", "component", "code"}
 
-    def test_module_diagram_in_diagrams(self):
-        assert "mypkg__utils" in self.state["diagrams"]
+    def test_no_root_id(self):
+        assert "rootId" not in self.state
+
+    def test_no_navigation_stack(self):
+        assert "navigationStack" not in self.state
+
+    def test_no_diagrams_key(self):
+        assert "diagrams" not in self.state
 
     def test_schema_valid(self):
         _validate(self.state)
 
 
 # ---------------------------------------------------------------------------
-# Root (component-level) diagram
+# Component level
 # ---------------------------------------------------------------------------
 
 
-class TestRootDiagram:
+class TestComponentLevel:
     def setup_method(self):
         self.pkg = _simple_package()
         self.state = emit_diagram_state(self.pkg, [])
-        self.root = self.state["diagrams"][ROOT_DIAGRAM_ID]
+        self.level = self.state["levels"]["component"]
 
-    def test_level_is_component(self):
-        assert self.root["level"] == "component"
-
-    def test_label_defaults_to_package_name(self):
-        assert self.root["label"] == "mypkg"
-
-    def test_custom_root_label(self):
-        state = emit_diagram_state(self.pkg, [], root_label="My Diagram")
-        assert state["diagrams"][ROOT_DIAGRAM_ID]["label"] == "My Diagram"
+    def test_level_key_is_component(self):
+        assert self.level["level"] == "component"
 
     def test_one_node_per_module(self):
-        assert len(self.root["nodes"]) == len(self.pkg.modules)
+        assert len(self.level["nodes"]) == len(self.pkg.modules)
 
     def test_module_node_type_is_component(self):
-        for node in self.root["nodes"]:
+        for node in self.level["nodes"]:
             assert node["type"] == "component"
 
-    def test_module_node_has_child_diagram_id(self):
-        for node in self.root["nodes"]:
-            assert "childDiagramId" in node
-            assert node["childDiagramId"] == node["id"]
+    def test_module_node_has_no_child_diagram_id(self):
+        for node in self.level["nodes"]:
+            assert "childDiagramId" not in node
 
     def test_module_node_has_position(self):
-        for node in self.root["nodes"]:
+        for node in self.level["nodes"]:
             pos = node["position"]
             assert "x" in pos and "y" in pos
 
-    def test_root_has_no_edges(self):
-        assert self.root["edges"] == []
+    def test_no_edges(self):
+        assert self.level["edges"] == []
 
-    def test_root_has_empty_annotations(self):
-        assert self.root["annotations"] == []
+    def test_empty_annotations(self):
+        assert self.level["annotations"] == []
 
 
 # ---------------------------------------------------------------------------
-# Code-level (module) diagram
+# Code level
 # ---------------------------------------------------------------------------
 
 
-class TestModuleDiagram:
+class TestCodeLevel:
     def setup_method(self):
         self.pkg = _simple_package()
         self.edges = _simple_edges(self.pkg)
         self.state = emit_diagram_state(self.pkg, self.edges)
-        self.mod_diag = self.state["diagrams"]["mypkg__utils"]
+        self.level = self.state["levels"]["code"]
 
-    def test_level_is_code(self):
-        assert self.mod_diag["level"] == "code"
-
-    def test_label_is_module_name(self):
-        assert self.mod_diag["label"] == "mypkg.utils"
+    def test_level_key_is_code(self):
+        assert self.level["level"] == "code"
 
     def test_one_node_per_class(self):
-        assert len(self.mod_diag["nodes"]) == 2
+        assert len(self.level["nodes"]) == 2
 
     def test_class_node_types(self):
-        types = {n["type"] for n in self.mod_diag["nodes"]}
+        types = {n["type"] for n in self.level["nodes"]}
         assert "class" in types
 
+    def test_class_nodes_have_parent_node_id(self):
+        for node in self.level["nodes"]:
+            assert "parentNodeId" in node
+            assert node["parentNodeId"] == "mypkg__utils"
+
     def test_inheritance_edge_present(self):
-        assert len(self.mod_diag["edges"]) == 1
+        assert len(self.level["edges"]) == 1
 
     def test_inheritance_edge_source_target(self):
-        edge = self.mod_diag["edges"][0]
+        edge = self.level["edges"][0]
         assert edge["source"] == "mypkg__utils.Child"
         assert edge["target"] == "mypkg__utils.Base"
 
     def test_inheritance_marker_end(self):
-        edge = self.mod_diag["edges"][0]
+        edge = self.level["edges"][0]
         assert edge["markerEnd"] == "hollow-triangle"
 
     def test_members_serialised(self):
-        child_node = next(n for n in self.mod_diag["nodes"] if n["label"] == "Child")
+        child_node = next(n for n in self.level["nodes"] if n["label"] == "Child")
         members = child_node["members"]
         assert len(members) == 2
         kinds = {m["kind"] for m in members}
         assert kinds == {"attribute", "operation"}
 
     def test_member_visibility(self):
-        child_node = next(n for n in self.mod_diag["nodes"] if n["label"] == "Child")
+        child_node = next(n for n in self.level["nodes"] if n["label"] == "Child")
         for m in child_node["members"]:
             assert m["visibility"] == "+"
 
     def test_no_annotations(self):
-        assert self.mod_diag["annotations"] == []
+        assert self.level["annotations"] == []
+
+
+# ---------------------------------------------------------------------------
+# Empty levels (context + container always present and always empty)
+# ---------------------------------------------------------------------------
+
+
+class TestEmptyLevels:
+    def setup_method(self):
+        self.pkg = _simple_package()
+        self.state = emit_diagram_state(self.pkg, _simple_edges(self.pkg))
+
+    def test_context_level_present(self):
+        assert "context" in self.state["levels"]
+
+    def test_container_level_present(self):
+        assert "container" in self.state["levels"]
+
+    def test_context_nodes_empty(self):
+        assert self.state["levels"]["context"]["nodes"] == []
+
+    def test_context_edges_empty(self):
+        assert self.state["levels"]["context"]["edges"] == []
+
+    def test_container_nodes_empty(self):
+        assert self.state["levels"]["container"]["nodes"] == []
+
+    def test_container_edges_empty(self):
+        assert self.state["levels"]["container"]["edges"] == []
 
 
 # ---------------------------------------------------------------------------
@@ -245,9 +271,7 @@ class TestCrossModuleEdgeFiltering:
             cross_module=True,
         )
         state = emit_diagram_state(pkg, [cross_edge])
-        # Neither module diagram should contain the cross-module edge
-        for mod_id in ["pkg__a", "pkg__b"]:
-            assert state["diagrams"][mod_id]["edges"] == []
+        assert state["levels"]["code"]["edges"] == []
 
     def test_same_module_edge_is_rendered(self):
         pkg = ParsedPackage(name="pkg", root_path="/pkg")
@@ -264,7 +288,7 @@ class TestCrossModuleEdgeFiltering:
             cross_module=False,
         )
         state = emit_diagram_state(pkg, [edge])
-        assert len(state["diagrams"]["pkg__mod"]["edges"]) == 1
+        assert len(state["levels"]["code"]["edges"]) == 1
 
 
 # ---------------------------------------------------------------------------
