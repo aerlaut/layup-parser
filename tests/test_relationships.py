@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from layup_python.models import ParsedClass, ParsedModule, ParsedPackage, NodeType
-from layup_python.parser.extractor import extract_module
-from layup_python.parser.walker import walk_package
-from layup_python.relationships import resolve_inheritance
+from layup_parser.models import ParsedClass, ParsedModule, ParsedPackage, NodeType
+from layup_parser.parser.extractor import extract_module
+from layup_parser.parser.walker import walk_package
+from layup_parser.relationships import resolve_inheritance
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sample_pkg"
 
@@ -148,7 +148,7 @@ class TestResolveInheritanceSynthetic:
 
 class TestResolveInheritanceFixture:
     def setup_method(self):
-        from layup_python.parser.extractor import extract_module
+        from layup_parser.parser.extractor import extract_module
 
         self.pkg = walk_package(FIXTURES)
         for mod in self.pkg.modules:

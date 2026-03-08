@@ -22,7 +22,7 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from dataclasses import dataclass
 
-from layup_python.models import InheritanceEdge, ParsedClass, ParsedModule
+from layup_parser.models import InheritanceEdge, ParsedClass, ParsedModule
 
 # ---------------------------------------------------------------------------
 # Constants

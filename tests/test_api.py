@@ -1,4 +1,4 @@
-"""Tests for the public API (layup_python.__init__)."""
+"""Tests for the public API (layup_parser.__init__)."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ from pathlib import Path
 import jsonschema
 import pytest
 
-import layup_python
-from layup_python import parse_package, parse_package_to_file
-from layup_python._schema_path import SCHEMA_PATH, SCHEMA_VERSION
+import layup_parser
+from layup_parser import parse_package, parse_package_to_file
+from layup_parser._schema_path import SCHEMA_PATH, SCHEMA_VERSION
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SAMPLE_PKG = FIXTURES / "sample_pkg"
@@ -149,11 +149,11 @@ class TestParsePackageLang:
 
 class TestPublicExports:
     def test_parse_package_exported(self):
-        assert hasattr(layup_python, "parse_package")
+        assert hasattr(layup_parser, "parse_package")
 
     def test_parse_package_to_file_exported(self):
-        assert hasattr(layup_python, "parse_package_to_file")
+        assert hasattr(layup_parser, "parse_package_to_file")
 
     def test_all_list(self):
-        assert "parse_package" in layup_python.__all__
-        assert "parse_package_to_file" in layup_python.__all__
+        assert "parse_package" in layup_parser.__all__
+        assert "parse_package_to_file" in layup_parser.__all__

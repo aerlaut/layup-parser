@@ -36,8 +36,8 @@ import sys
 
 import click
 
-from layup_python import parse_package
-from layup_python.parser import SUPPORTED_LANGUAGES
+from layup_parser import parse_package
+from layup_parser.parser import SUPPORTED_LANGUAGES
 
 
 @click.command(name="layup-parse")

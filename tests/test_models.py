@@ -1,6 +1,6 @@
 """Sanity tests for the IR dataclasses in models.py."""
 
-from layup_python.models import (
+from layup_parser.models import (
     InheritanceEdge,
     MemberKind,
     MemberVisibility,

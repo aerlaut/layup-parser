@@ -1,6 +1,6 @@
 """AST-based class and member extraction.
 
-For each :class:`~layup_python.models.ParsedModule` (which has a ``file_path``
+For each :class:`~layup_parser.models.ParsedModule` (which has a ``file_path``
 but no classes yet), :func:`extract_module` parses the source file with the
 standard ``ast`` module and populates ``module.classes``.
 
@@ -26,7 +26,7 @@ import ast
 import uuid
 from pathlib import Path
 
-from layup_python.models import (
+from layup_parser.models import (
     MemberKind,
     MemberVisibility,
     NodeType,
@@ -289,9 +289,9 @@ def extract_module(module: ParsedModule) -> None:
     Parameters
     ----------
     module:
-        A :class:`~layup_python.models.ParsedModule` whose ``file_path``
+        A :class:`~layup_parser.models.ParsedModule` whose ``file_path``
         points to a readable ``.py`` file.  ``module.classes`` will be
-        extended with the extracted :class:`~layup_python.models.ParsedClass`
+        extended with the extracted :class:`~layup_parser.models.ParsedClass`
         objects.
 
     Raises

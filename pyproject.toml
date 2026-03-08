@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "layup-python"
+name = "layup-parser"
 version = "0.1.0"
 description = "Parse Python packages and export their structure as Layup diagram JSON"
 readme = "README.md"
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-layup-parse = "layup_python.cli:main"
+layup-parse = "layup_parser.cli:main"
 
 [project.optional-dependencies]
 dev = [
@@ -25,7 +25,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["layup_python*"]
+include = ["layup_parser*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

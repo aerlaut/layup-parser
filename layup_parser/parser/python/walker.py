@@ -4,7 +4,7 @@ Given a root directory, the walker:
 1. Verifies it is a Python package (contains ``__init__.py``).
 2. Recursively collects all ``.py`` files, skipping common non-source
    directories (``__pycache__``, virtual-envs, build artefacts, etc.).
-3. Returns a :class:`~layup_python.models.ParsedPackage` whose modules are
+3. Returns a :class:`~layup_parser.models.ParsedPackage` whose modules are
    populated with file paths and dotted names but *no* classes yet — class
    extraction is performed separately by the extractor.
 """
@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from layup_python.models import ParsedModule, ParsedPackage
+from layup_parser.models import ParsedModule, ParsedPackage
 
 # Directories to skip unconditionally
 _DEFAULT_IGNORE: frozenset[str] = frozenset(

@@ -1,7 +1,7 @@
 """Layup DiagramState JSON emitter.
 
-Takes a fully-populated :class:`~layup_python.models.ParsedPackage` plus
-resolved :class:`~layup_python.models.InheritanceEdge` objects and layout
+Takes a fully-populated :class:`~layup_parser.models.ParsedPackage` plus
+resolved :class:`~layup_parser.models.InheritanceEdge` objects and layout
 positions, and returns a Python dict that validates against
 ``schema/diagram.schema.json``.
 
@@ -27,13 +27,13 @@ the CLI / API).
 
 from __future__ import annotations
 
-from layup_python._schema_path import SCHEMA_VERSION
-from layup_python.layout.hierarchical import (
+from layup_parser._schema_path import SCHEMA_VERSION
+from layup_parser.layout.hierarchical import (
     Position,
     layout_classes,
     layout_modules,
 )
-from layup_python.models import (
+from layup_parser.models import (
     InheritanceEdge,
     MemberKind,
     MemberVisibility,
@@ -219,9 +219,9 @@ def emit_diagram_state(
     Parameters
     ----------
     package:
-        A fully-populated :class:`~layup_python.models.ParsedPackage`.
+        A fully-populated :class:`~layup_parser.models.ParsedPackage`.
     edges:
-        Resolved :class:`~layup_python.models.InheritanceEdge` list from the
+        Resolved :class:`~layup_parser.models.InheritanceEdge` list from the
         relationship resolver.  Cross-module edges are automatically excluded
         from rendering.
     root_label:

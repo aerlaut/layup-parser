@@ -4,7 +4,7 @@ Public API
 ----------
 ::
 
-    from layup_python import parse_package, parse_package_to_file
+    from layup_parser import parse_package, parse_package_to_file
 
     # Returns a DiagramState dict
     diagram = parse_package("/path/to/mypkg")
@@ -19,10 +19,10 @@ import json
 import sys
 from pathlib import Path
 
-from layup_python.emitter.layup import emit_diagram_state
-from layup_python.models import ParsedPackage
-from layup_python.parser import get_parser
-from layup_python.relationships import resolve_inheritance
+from layup_parser.emitter.layup import emit_diagram_state
+from layup_parser.models import ParsedPackage
+from layup_parser.parser import get_parser
+from layup_parser.relationships import resolve_inheritance
 
 __all__ = ["parse_package", "parse_package_to_file"]
 
@@ -44,7 +44,7 @@ def parse_package(
         ``__init__.py``; requirements vary per language.
     lang:
         Language identifier for the parser to use (default: ``"python"``).
-        See :data:`~layup_python.parser.SUPPORTED_LANGUAGES` for available
+        See :data:`~layup_parser.parser.SUPPORTED_LANGUAGES` for available
         options.
     root_label:
         Optional label for the root component diagram.  Defaults to the
@@ -91,7 +91,7 @@ def parse_package(
 
         import jsonschema
 
-        from layup_python._schema_path import SCHEMA_PATH
+        from layup_parser._schema_path import SCHEMA_PATH
 
         with SCHEMA_PATH.open() as f:
             schema = _json.load(f)

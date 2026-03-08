@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from layup_python._schema_path import SCHEMA_PATH
-from layup_python.cli import main
+from layup_parser._schema_path import SCHEMA_PATH
+from layup_parser.cli import main
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SAMPLE_PKG = FIXTURES / "sample_pkg"

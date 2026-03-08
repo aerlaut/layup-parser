@@ -8,9 +8,9 @@ from pathlib import Path
 import jsonschema
 import pytest
 
-from layup_python._schema_path import SCHEMA_PATH, SCHEMA_VERSION
-from layup_python.emitter.layup import emit_diagram_state
-from layup_python.models import (
+from layup_parser._schema_path import SCHEMA_PATH, SCHEMA_VERSION
+from layup_parser.emitter.layup import emit_diagram_state
+from layup_parser.models import (
     InheritanceEdge,
     MemberKind,
     MemberVisibility,
@@ -305,9 +305,9 @@ class TestSchemaValidation:
         _validate(state)
 
     def test_full_fixture_validates(self):
-        from layup_python.parser.walker import walk_package
-        from layup_python.parser.extractor import extract_module
-        from layup_python.relationships import resolve_inheritance
+        from layup_parser.parser.walker import walk_package
+        from layup_parser.parser.extractor import extract_module
+        from layup_parser.relationships import resolve_inheritance
 
         fixture = Path(__file__).parent / "fixtures" / "sample_pkg"
         pkg = walk_package(fixture)

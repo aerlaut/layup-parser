@@ -1,8 +1,8 @@
-"""Python implementation of the :class:`~layup_python.parser.base.LanguageParser` protocol.
+"""Python implementation of the :class:`~layup_parser.parser.base.LanguageParser` protocol.
 
 :class:`PythonParser` composes the Python-specific walker and AST extractor
 into a single :meth:`parse` call, satisfying the language-agnostic
-:class:`~layup_python.parser.base.LanguageParser` protocol expected by the
+:class:`~layup_parser.parser.base.LanguageParser` protocol expected by the
 rest of the pipeline.
 """
 
@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from layup_python.models import ParsedPackage
-from layup_python.parser.python.extractor import extract_module
-from layup_python.parser.python.walker import walk_package
+from layup_parser.models import ParsedPackage
+from layup_parser.parser.python.extractor import extract_module
+from layup_parser.parser.python.walker import walk_package
 
 
 class PythonParser:
@@ -38,7 +38,7 @@ class PythonParser:
             ``__init__.py``).
         ignore:
             Additional directory names to skip beyond the built-in exclusion
-            list (see :func:`~layup_python.parser.python.walker.walk_package`).
+            list (see :func:`~layup_parser.parser.python.walker.walk_package`).
 
         Returns
         -------

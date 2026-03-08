@@ -1,4 +1,4 @@
-# layup-python
+# layup-parser
 
 A multi-language source importer for [Layup](https://github.com/aerlaut/layup) — parses a source package's structure and exports it as a Layup `DiagramState` JSON, ready to be imported into Layup for diagramming.
 
@@ -11,14 +11,14 @@ Currently supports **Python**. The architecture is designed for additional langu
 Requires Python 3.10+.
 
 ```bash
-pip install layup-python
+pip install layup-parser
 ```
 
 Or install from source:
 
 ```bash
-git clone https://github.com/aerlaut/layup-python.git
-cd layup-python
+git clone https://github.com/aerlaut/layup-parser.git
+cd layup-parser
 pip install .
 ```
 
@@ -58,7 +58,7 @@ layup-parse ./mypkg --root-label "My Service" --ignore tests --no-validate
 ### Python API
 
 ```python
-from layup_python import parse_package, parse_package_to_file
+from layup_parser import parse_package, parse_package_to_file
 
 # Returns a DiagramState dict (defaults to lang="python")
 diagram = parse_package("/path/to/mypkg")
@@ -93,7 +93,7 @@ parse_package_to_file("/path/to/mypkg", "diagram.json", lang="python")
 
 ## How it works
 
-`layup-python` uses a four-stage pipeline that is **language-agnostic** after the first stage:
+`layup-parser` uses a four-stage pipeline that is **language-agnostic** after the first stage:
 
 ```
 [LanguageParser]        [relationships]      [layout]      [emitter]
@@ -116,10 +116,10 @@ Adding a new language requires three steps: implement the parser, register it, a
 
 ### 1. Implement `LanguageParser`
 
-Create a sub-package under `layup_python/parser/<lang>/`:
+Create a sub-package under `layup_parser/parser/<lang>/`:
 
 ```
-layup_python/parser/
+layup_parser/parser/
 └── mylang/
     ├── __init__.py
     ├── walker.py      # discovers source files, returns ParsedPackage with empty modules
@@ -130,10 +130,10 @@ layup_python/parser/
 `parser.py` must expose a class with a single `parse` method matching the `LanguageParser` protocol:
 
 ```python
-# layup_python/parser/mylang/parser.py
+# layup_parser/parser/mylang/parser.py
 from __future__ import annotations
 from pathlib import Path
-from layup_python.models import ParsedPackage
+from layup_parser.models import ParsedPackage
 
 class MyLangParser:
     def parse(
@@ -148,7 +148,7 @@ class MyLangParser:
         ...
 ```
 
-The IR types you need to populate are all in `layup_python/models.py`:
+The IR types you need to populate are all in `layup_parser/models.py`:
 
 | Type | Purpose |
 |---|---|
@@ -157,15 +157,15 @@ The IR types you need to populate are all in `layup_python/models.py`:
 | `ParsedClass` | One class/interface/enum (id, name, node type, members, base names) |
 | `ParsedMember` | One attribute or method (id, kind, visibility, name, type, params) |
 
-See `layup_python/parser/base.py` for the full protocol docstring, and the Python implementation (`layup_python/parser/python/`) as a reference.
+See `layup_parser/parser/base.py` for the full protocol docstring, and the Python implementation (`layup_parser/parser/python/`) as a reference.
 
 ### 2. Register the parser
 
-Add one entry to `_PARSERS` in `layup_python/parser/__init__.py`:
+Add one entry to `_PARSERS` in `layup_parser/parser/__init__.py`:
 
 ```python
-# layup_python/parser/__init__.py
-from layup_python.parser.mylang import MyLangParser   # add this import
+# layup_parser/parser/__init__.py
+from layup_parser.parser.mylang import MyLangParser   # add this import
 
 _PARSERS: dict[str, type] = {
     "python": PythonParser,

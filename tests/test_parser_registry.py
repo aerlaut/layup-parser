@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from layup_python.parser import SUPPORTED_LANGUAGES, get_parser
-from layup_python.parser.base import LanguageParser
-from layup_python.parser.python import PythonParser
+from layup_parser.parser import SUPPORTED_LANGUAGES, get_parser
+from layup_parser.parser.base import LanguageParser
+from layup_parser.parser.python import PythonParser
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SAMPLE_PKG = FIXTURES / "sample_pkg"

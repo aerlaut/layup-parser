@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import itertools
 
-from layup_python.models import InheritanceEdge, ParsedClass, ParsedPackage
+from layup_parser.models import InheritanceEdge, ParsedClass, ParsedPackage
 
 
 def resolve_inheritance(
@@ -34,7 +34,7 @@ def resolve_inheritance(
     Parameters
     ----------
     package:
-        A fully-populated :class:`~layup_python.models.ParsedPackage` (walker
+        A fully-populated :class:`~layup_parser.models.ParsedPackage` (walker
         + extractor have already run).
 
     Returns

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from layup_python.layout.hierarchical import (
+from layup_parser.layout.hierarchical import (
     CLASS_GAP_X,
     CLASS_GAP_Y,
     CLASS_NODE_W,
@@ -16,7 +16,7 @@ from layup_python.layout.hierarchical import (
     layout_classes,
     layout_modules,
 )
-from layup_python.models import InheritanceEdge, NodeType, ParsedClass, ParsedModule
+from layup_parser.models import InheritanceEdge, NodeType, ParsedClass, ParsedModule
 
 
 # ---------------------------------------------------------------------------

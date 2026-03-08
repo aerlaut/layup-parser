@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from layup_python.parser.python.walker import walk_package
+from layup_parser.parser.python.walker import walk_package
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SAMPLE_PKG = FIXTURES / "sample_pkg"
