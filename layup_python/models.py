@@ -37,6 +37,7 @@ class NodeType(str, Enum):
     ABSTRACT_CLASS = "abstract-class"
     INTERFACE = "interface"
     ENUM = "enum"
+    RECORD = "record"
 
 
 # ---------------------------------------------------------------------------

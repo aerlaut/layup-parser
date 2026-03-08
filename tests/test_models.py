@@ -72,6 +72,7 @@ class TestParsedClass:
         assert NodeType.ABSTRACT_CLASS.value == "abstract-class"
         assert NodeType.INTERFACE.value == "interface"
         assert NodeType.ENUM.value == "enum"
+        assert NodeType.RECORD.value == "record"
 
 
 class TestParsedModule:
