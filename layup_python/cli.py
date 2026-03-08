@@ -8,6 +8,7 @@ Usage
 
     Options:
       -o, --output FILE          Write JSON to FILE (default: stdout)
+      --lang TEXT                Source language (default: python)
       --root-label TEXT          Label for the root diagram (default: package name)
       --validate / --no-validate Validate against schema before output (default: on)
       --indent INTEGER           JSON indentation level (default: 2)
@@ -36,6 +37,7 @@ import sys
 import click
 
 from layup_python import parse_package
+from layup_python.parser import SUPPORTED_LANGUAGES
 
 
 @click.command(name="layup-parse")
@@ -47,6 +49,13 @@ from layup_python import parse_package
     type=click.Path(dir_okay=False, writable=True),
     default=None,
     help="Write JSON to this file (default: stdout).",
+)
+@click.option(
+    "--lang",
+    default="python",
+    show_default=True,
+    type=click.Choice(SUPPORTED_LANGUAGES, case_sensitive=False),
+    help="Source language of the package to parse.",
 )
 @click.option(
     "--root-label",
@@ -77,12 +86,13 @@ from layup_python import parse_package
 def main(
     path: str,
     output_file: str | None,
+    lang: str,
     root_label: str | None,
     validate: bool,
     indent: int,
     ignore_dirs: tuple[str, ...],
 ) -> None:
-    """Parse a Python package at PATH and emit a Layup DiagramState JSON.
+    """Parse a source package at PATH and emit a Layup DiagramState JSON.
 
     Cross-module inheritance edges are not rendered in the output (v1
     limitation) but are reported as warnings on stderr.
@@ -92,6 +102,7 @@ def main(
     try:
         state = parse_package(
             path,
+            lang=lang,
             root_label=root_label,
             ignore=ignore,
             validate=validate,

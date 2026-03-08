@@ -21,8 +21,7 @@ from pathlib import Path
 
 from layup_python.emitter.layup import emit_diagram_state
 from layup_python.models import ParsedPackage
-from layup_python.parser.extractor import extract_module
-from layup_python.parser.walker import walk_package
+from layup_python.parser import get_parser
 from layup_python.relationships import resolve_inheritance
 
 __all__ = ["parse_package", "parse_package_to_file"]
@@ -31,22 +30,28 @@ __all__ = ["parse_package", "parse_package_to_file"]
 def parse_package(
     path: str | Path,
     *,
+    lang: str = "python",
     root_label: str | None = None,
     ignore: frozenset[str] | None = None,
     validate: bool = True,
 ) -> dict:
-    """Parse a Python package and return a Layup ``DiagramState`` dict.
+    """Parse a source package and return a Layup ``DiagramState`` dict.
 
     Parameters
     ----------
     path:
-        Root directory of the Python package (must contain ``__init__.py``).
+        Root directory of the source package.  For Python this must contain
+        ``__init__.py``; requirements vary per language.
+    lang:
+        Language identifier for the parser to use (default: ``"python"``).
+        See :data:`~layup_python.parser.SUPPORTED_LANGUAGES` for available
+        options.
     root_label:
         Optional label for the root component diagram.  Defaults to the
         package directory name.
     ignore:
         Additional directory names to exclude during walking (merged with the
-        built-in exclusion list — see :func:`~layup_python.parser.walker.walk_package`).
+        built-in exclusion list defined by each language parser).
     validate:
         If ``True`` (default), validate the output against the bundled JSON
         Schema before returning.  Raises :class:`jsonschema.ValidationError`
@@ -60,29 +65,27 @@ def parse_package(
     Raises
     ------
     ValueError
-        If *path* is not a valid Python package directory.
+        If *path* is not a valid source package directory, or *lang* is not
+        a supported language identifier.
     jsonschema.ValidationError
         If *validate* is ``True`` and the output does not match the schema
         (should never happen — indicates a bug in the emitter).
     """
-    # 1. Walk
-    package: ParsedPackage = walk_package(path, ignore=ignore)
+    # 1. Walk + extract via the language-specific parser
+    parser = get_parser(lang)
+    package: ParsedPackage = parser.parse(Path(path), ignore=ignore)
 
-    # 2. Extract
-    for mod in package.modules:
-        extract_module(mod)
-
-    # 3. Resolve relationships
+    # 2. Resolve relationships
     edges, warnings = resolve_inheritance(package)
 
     # Emit warnings to stderr so stdout stays clean for piping
     for w in warnings:
         print(f"[layup-python] WARNING: {w}", file=sys.stderr)
 
-    # 4. Emit
+    # 3. Emit
     state = emit_diagram_state(package, edges, root_label=root_label)
 
-    # 5. Optional schema validation
+    # 4. Optional schema validation
     if validate:
         import json as _json
 
@@ -101,19 +104,22 @@ def parse_package_to_file(
     path: str | Path,
     output: str | Path,
     *,
+    lang: str = "python",
     root_label: str | None = None,
     ignore: frozenset[str] | None = None,
     validate: bool = True,
     indent: int = 2,
 ) -> None:
-    """Parse a Python package and write the result as JSON to *output*.
+    """Parse a source package and write the result as JSON to *output*.
 
     Parameters
     ----------
     path:
-        Root directory of the Python package.
+        Root directory of the source package.
     output:
         Destination file path.  Parent directories are created if needed.
+    lang:
+        Language identifier for the parser to use (default: ``"python"``).
     root_label:
         Optional label for the root diagram.
     ignore:
@@ -123,7 +129,7 @@ def parse_package_to_file(
     indent:
         JSON indentation level (default: 2).
     """
-    state = parse_package(path, root_label=root_label, ignore=ignore, validate=validate)
+    state = parse_package(path, lang=lang, root_label=root_label, ignore=ignore, validate=validate)
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8") as f:
