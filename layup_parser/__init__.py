@@ -6,7 +6,7 @@ Public API
 
     from layup_parser import parse_package, parse_package_to_file
 
-    # Returns a DiagramState dict
+    # Returns a NodeSubtreeExport dict
     diagram = parse_package("/path/to/mypkg")
 
     # Convenience: write JSON directly to a file
@@ -36,7 +36,7 @@ def parse_package(
     ignore: frozenset[str] | None = None,
     validate: bool = True,
 ) -> dict:
-    """Parse a source package and return a Layup ``DiagramState`` dict.
+    """Parse a source package and return a Layup ``NodeSubtreeExport`` dict.
 
     Parameters
     ----------
@@ -61,7 +61,7 @@ def parse_package(
     Returns
     -------
     dict
-        A valid Layup ``DiagramState`` object ready for JSON serialisation.
+        A valid Layup ``NodeSubtreeExport`` object ready for JSON serialisation.
 
     Raises
     ------

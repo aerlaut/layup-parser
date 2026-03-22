@@ -1,22 +1,19 @@
-"""Layup DiagramState JSON emitter.
+"""Layup NodeSubtreeExport JSON emitter.
 
 Takes a fully-populated :class:`~layup_parser.models.ParsedPackage` plus
 resolved :class:`~layup_parser.models.InheritanceEdge` objects and layout
 positions, and returns a Python dict that validates against
-``schema/diagram.schema.json``.
+``schema/nodeSubtree.schema.json``.
 
-Output structure (v2)
+Output structure (v1)
 ---------------------
 ::
 
-    DiagramState
-    ├── version        → 2
-    ├── currentLevel   → "component"
-    ├── selectedId     → null
-    ├── pendingNodeType→ null
+    NodeSubtreeExport
+    ├── exportType     → "node-subtree"
+    ├── version        → 1
+    ├── rootLevel      → "component"
     └── levels
-        ├── "context"   (empty DiagramLevel)
-        ├── "container" (empty DiagramLevel)
         ├── "component" (one node per module)
         └── "code"      (one node per class with parentNodeId; all resolved edges)
 """
@@ -152,12 +149,11 @@ def _serialise_usage_edge(edge: UsageEdge) -> dict:
 
 
 def _empty_level(level_key: str) -> dict:
-    """Build an empty DiagramLevel dict for the given level key."""
+    """Build an empty NodeSubtreeLevelData dict for the given level key."""
     return {
         "level": level_key,
         "nodes": [],
         "edges": [],
-        "annotations": [],
     }
 
 
@@ -175,7 +171,6 @@ def _build_component_level(
         "level": "component",
         "nodes": nodes,
         "edges": [],
-        "annotations": [],
     }
 
 
@@ -214,7 +209,6 @@ def _build_code_level(
         "level": "code",
         "nodes": all_nodes,
         "edges": all_edges,
-        "annotations": [],
     }
 
 
@@ -230,7 +224,7 @@ def emit_diagram_state(
     usage_edges: list[UsageEdge] = (),
     root_label: str | None = None,
 ) -> dict:
-    """Build a Layup-compatible ``DiagramState`` dict (v2 schema).
+    """Build a Layup-compatible ``NodeSubtreeExport`` dict (v1 schema).
 
     Parameters
     ----------
@@ -244,13 +238,12 @@ def emit_diagram_state(
         Resolved :class:`~layup_parser.models.UsageEdge` list from the usage
         resolver.  Serialised with dashed line and open-arrow marker.
     root_label:
-        Unused in v2 (DiagramLevel no longer has a label field). Kept for
-        backwards-compatible call sites; the argument is silently ignored.
+        Unused (kept for backwards-compatible call sites; silently ignored).
 
     Returns
     -------
     dict
-        A Python dict representing a valid ``DiagramState`` JSON object.
+        A Python dict representing a valid ``NodeSubtreeExport`` JSON object.
     """
     # --- Layout ---
     module_positions = layout_modules(package.modules)
@@ -275,16 +268,13 @@ def emit_diagram_state(
 
     # --- Assemble levels ---
     levels = {
-        "context": _empty_level("context"),
-        "container": _empty_level("container"),
         "component": _build_component_level(package, module_positions),
         "code": _build_code_level(package, edges_by_mod, class_positions_by_mod, usage_edges),
     }
 
     return {
+        "exportType": "node-subtree",
         "version": SCHEMA_VERSION,
-        "currentLevel": "component",
-        "selectedId": None,
-        "pendingNodeType": None,
+        "rootLevel": "component",
         "levels": levels,
     }
