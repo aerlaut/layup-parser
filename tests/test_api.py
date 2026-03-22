@@ -73,15 +73,26 @@ class TestParsePackage:
         assert isinstance(result, dict)
 
     def test_cross_module_warnings_to_stderr(self, capsys):
-        # sample_pkg has cross-module inheritance (Dog from animals inherits
-        # from nothing cross-module in this fixture, but subpkg doesn't inherit
-        # from animals). Let's just verify the call doesn't crash and stderr
-        # is readable.
         parse_package(SAMPLE_PKG)
         captured = capsys.readouterr()
         # Any warnings that exist go to stderr
         if captured.err:
             assert "WARNING" in captured.err
+
+    def test_usage_edges_present(self):
+        """Integration: parsed fixture should contain usage (dashed) edges."""
+        result = parse_package(SAMPLE_PKG)
+        all_edges = result["levels"]["code"]["edges"]
+        dashed_edges = [e for e in all_edges if e.get("lineStyle") == "dashed"]
+        assert len(dashed_edges) > 0
+
+    def test_usage_edges_have_open_arrow_marker(self):
+        """All dashed edges should carry open-arrow markerEnd."""
+        result = parse_package(SAMPLE_PKG)
+        all_edges = result["levels"]["code"]["edges"]
+        for e in all_edges:
+            if e.get("lineStyle") == "dashed":
+                assert e["markerEnd"] == "open-arrow"
 
 
 class TestParsePackageToFile:

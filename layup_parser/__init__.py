@@ -23,6 +23,7 @@ from layup_parser.emitter.layup import emit_diagram_state
 from layup_parser.models import ParsedPackage
 from layup_parser.parser import get_parser
 from layup_parser.relationships import resolve_inheritance
+from layup_parser.usage import resolve_usage
 
 __all__ = ["parse_package", "parse_package_to_file"]
 
@@ -77,13 +78,14 @@ def parse_package(
 
     # 2. Resolve relationships
     edges, warnings = resolve_inheritance(package)
+    usage_edges, usage_warnings = resolve_usage(package)
 
     # Emit warnings to stderr so stdout stays clean for piping
-    for w in warnings:
-        print(f"[layup-python] WARNING: {w}", file=sys.stderr)
+    for w in warnings + usage_warnings:
+        print(f"[layup-parser] WARNING: {w}", file=sys.stderr)
 
     # 3. Emit
-    state = emit_diagram_state(package, edges, root_label=root_label)
+    state = emit_diagram_state(package, edges, usage_edges=usage_edges, root_label=root_label)
 
     # 4. Optional schema validation
     if validate:

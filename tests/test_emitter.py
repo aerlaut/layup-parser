@@ -19,6 +19,7 @@ from layup_parser.models import (
     ParsedMember,
     ParsedModule,
     ParsedPackage,
+    UsageEdge,
 )
 
 # ---------------------------------------------------------------------------
@@ -292,6 +293,78 @@ class TestCrossModuleEdgeRendering:
         )
         state = emit_diagram_state(pkg, [edge])
         assert len(state["levels"]["code"]["edges"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Usage edges
+# ---------------------------------------------------------------------------
+
+
+class TestUsageEdges:
+    def test_usage_edge_appears_in_code_level(self):
+        pkg = ParsedPackage(name="pkg", root_path="/pkg")
+        mod = ParsedModule(id="pkg__mod", name="pkg.mod", file_path="/pkg/mod.py")
+        a = ParsedClass(id="pkg__mod.A", name="A", module_id="pkg__mod")
+        b = ParsedClass(id="pkg__mod.B", name="B", module_id="pkg__mod")
+        mod.classes = [a, b]
+        pkg.modules = [mod]
+
+        usage_edge = UsageEdge(id="usage_1", source_id="pkg__mod.A", target_id="pkg__mod.B")
+        state = emit_diagram_state(pkg, [], usage_edges=[usage_edge])
+
+        edges = state["levels"]["code"]["edges"]
+        assert len(edges) == 1
+        e = edges[0]
+        assert e["source"] == "pkg__mod.A"
+        assert e["target"] == "pkg__mod.B"
+
+    def test_usage_edge_line_style_dashed(self):
+        pkg = ParsedPackage(name="pkg", root_path="/pkg")
+        mod = ParsedModule(id="pkg__mod", name="pkg.mod", file_path="/pkg/mod.py")
+        a = ParsedClass(id="pkg__mod.A", name="A", module_id="pkg__mod")
+        b = ParsedClass(id="pkg__mod.B", name="B", module_id="pkg__mod")
+        mod.classes = [a, b]
+        pkg.modules = [mod]
+
+        usage_edge = UsageEdge(id="usage_1", source_id="pkg__mod.A", target_id="pkg__mod.B")
+        state = emit_diagram_state(pkg, [], usage_edges=[usage_edge])
+
+        e = state["levels"]["code"]["edges"][0]
+        assert e["lineStyle"] == "dashed"
+
+    def test_usage_edge_marker_end_open_arrow(self):
+        pkg = ParsedPackage(name="pkg", root_path="/pkg")
+        mod = ParsedModule(id="pkg__mod", name="pkg.mod", file_path="/pkg/mod.py")
+        a = ParsedClass(id="pkg__mod.A", name="A", module_id="pkg__mod")
+        b = ParsedClass(id="pkg__mod.B", name="B", module_id="pkg__mod")
+        mod.classes = [a, b]
+        pkg.modules = [mod]
+
+        usage_edge = UsageEdge(id="usage_1", source_id="pkg__mod.A", target_id="pkg__mod.B")
+        state = emit_diagram_state(pkg, [], usage_edges=[usage_edge])
+
+        e = state["levels"]["code"]["edges"][0]
+        assert e["markerEnd"] == "open-arrow"
+
+    def test_inheritance_and_usage_edges_coexist(self):
+        """Both edge types should appear together in the code level."""
+        pkg = ParsedPackage(name="pkg", root_path="/pkg")
+        mod = ParsedModule(id="pkg__mod", name="pkg.mod", file_path="/pkg/mod.py")
+        a = ParsedClass(id="pkg__mod.A", name="A", module_id="pkg__mod")
+        b = ParsedClass(id="pkg__mod.B", name="B", module_id="pkg__mod")
+        c = ParsedClass(id="pkg__mod.C", name="C", module_id="pkg__mod")
+        mod.classes = [a, b, c]
+        pkg.modules = [mod]
+
+        inh_edge = InheritanceEdge(id="edge_1", source_id="pkg__mod.B", target_id="pkg__mod.A")
+        usage_edge = UsageEdge(id="usage_1", source_id="pkg__mod.C", target_id="pkg__mod.A")
+        state = emit_diagram_state(pkg, [inh_edge], usage_edges=[usage_edge])
+
+        edges = state["levels"]["code"]["edges"]
+        assert len(edges) == 2
+        line_styles = {e["lineStyle"] for e in edges}
+        assert "solid" in line_styles
+        assert "dashed" in line_styles
 
 
 # ---------------------------------------------------------------------------
