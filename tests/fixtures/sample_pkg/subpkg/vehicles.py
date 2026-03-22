@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import abc
 
+from sample_pkg.animals import Animal
+
 
 class Vehicle(abc.ABC):
     """Abstract base for all vehicles."""
+
+    mascot: Animal
 
     def __init__(self, make: str, speed: float) -> None:
         self.make: str = make
