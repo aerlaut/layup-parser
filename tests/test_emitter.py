@@ -134,6 +134,29 @@ class TestComponentLevel:
         self.state = emit_diagram_state(self.pkg, [])
         self.level = self.state["levels"]["component"]
 
+    def test_module_node_description_uses_module_description(self):
+        pkg = ParsedPackage(name="mypkg", root_path="/mypkg")
+        mod = ParsedModule(
+            id="mypkg__utils",
+            name="mypkg.utils",
+            file_path="/mypkg/utils.py",
+            description="Utility helpers for mypkg.",
+        )
+        mod.classes = []
+        pkg.modules = [mod]
+        state = emit_diagram_state(pkg, [])
+        node = state["levels"]["component"]["nodes"][0]
+        assert node["description"] == "Utility helpers for mypkg."
+
+    def test_module_node_description_empty_when_no_description(self):
+        pkg = ParsedPackage(name="mypkg", root_path="/mypkg")
+        mod = ParsedModule(id="mypkg__utils", name="mypkg.utils", file_path="/mypkg/utils.py")
+        mod.classes = []
+        pkg.modules = [mod]
+        state = emit_diagram_state(pkg, [])
+        node = state["levels"]["component"]["nodes"][0]
+        assert node["description"] == ""
+
     def test_level_key_is_component(self):
         assert self.level["level"] == "component"
 

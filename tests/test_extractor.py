@@ -190,6 +190,26 @@ def _parse_source(source: str) -> ParsedModule:
     return mod
 
 
+class TestModuleDescription:
+    def test_module_docstring_is_extracted(self):
+        mod = _module("sample_pkg.animals", "animals.py")
+        extract_module(mod)
+        assert mod.description == "Animal class hierarchy — used as a fixture for parser tests."
+
+    def test_module_without_docstring_has_none_description(self):
+        mod = _module("sample_pkg", "__init__.py")
+        extract_module(mod)
+        assert mod.description is None
+
+    def test_multiline_docstring_uses_first_line(self):
+        mod = _parse_source('"""First line.\n\nSecond paragraph.\n"""\nclass C: pass\n')
+        assert mod.description == "First line."
+
+    def test_no_docstring_leaves_description_none(self):
+        mod = _parse_source("class C: pass\n")
+        assert mod.description is None
+
+
 class TestSyntheticSources:
     def test_empty_file(self):
         mod = _parse_source("")

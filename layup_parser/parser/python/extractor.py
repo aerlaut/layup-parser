@@ -304,6 +304,10 @@ def extract_module(module: ParsedModule) -> None:
     source = Path(module.file_path).read_text(encoding="utf-8")
     tree = ast.parse(source, filename=module.file_path)
 
+    raw_docstring = ast.get_docstring(tree)
+    if raw_docstring:
+        module.description = raw_docstring.splitlines()[0].strip()
+
     for node in ast.walk(tree):
         if not isinstance(node, ast.ClassDef):
             continue

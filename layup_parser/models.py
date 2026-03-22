@@ -109,6 +109,9 @@ class ParsedModule:
     file_path: str
     """Absolute path to the ``.py`` file."""
 
+    description: str | None = None
+    """Short description of the module, typically extracted from its docstring."""
+
     classes: list[ParsedClass] = field(default_factory=list)
 
 

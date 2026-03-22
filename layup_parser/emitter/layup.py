@@ -113,7 +113,7 @@ def _serialise_module_node(mod: ParsedModule, position: Position) -> dict:
         "id": mod.id,
         "type": "component",
         "label": mod.name,
-        "description": mod.file_path,
+        "description": mod.description or "",
         "position": position.to_dict(),
     }
 
