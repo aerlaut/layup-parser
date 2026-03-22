@@ -249,12 +249,12 @@ class TestEmptyLevels:
 
 
 # ---------------------------------------------------------------------------
-# Cross-module edge filtering
+# Cross-module edge rendering
 # ---------------------------------------------------------------------------
 
 
-class TestCrossModuleEdgeFiltering:
-    def test_cross_module_edge_not_rendered(self):
+class TestCrossModuleEdgeRendering:
+    def test_cross_module_edge_is_rendered(self):
         pkg = ParsedPackage(name="pkg", root_path="/pkg")
         mod_a = ParsedModule(id="pkg__a", name="pkg.a", file_path="/pkg/a.py")
         mod_b = ParsedModule(id="pkg__b", name="pkg.b", file_path="/pkg/b.py")
@@ -271,7 +271,10 @@ class TestCrossModuleEdgeFiltering:
             cross_module=True,
         )
         state = emit_diagram_state(pkg, [cross_edge])
-        assert state["levels"]["code"]["edges"] == []
+        assert len(state["levels"]["code"]["edges"]) == 1
+        edge = state["levels"]["code"]["edges"][0]
+        assert edge["source"] == "pkg__b.Child"
+        assert edge["target"] == "pkg__a.Base"
 
     def test_same_module_edge_is_rendered(self):
         pkg = ParsedPackage(name="pkg", root_path="/pkg")

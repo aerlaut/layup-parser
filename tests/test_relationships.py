@@ -84,6 +84,7 @@ class TestResolveInheritanceSynthetic:
         assert e.cross_module is True
         assert len(warnings) == 1
         assert "Cross-module" in warnings[0]
+        assert "not rendered" not in warnings[0]
 
     def test_multiple_inheritance(self):
         """Both bases resolved → two edges."""
