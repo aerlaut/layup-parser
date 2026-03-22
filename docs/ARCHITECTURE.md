@@ -2,13 +2,13 @@
 
 ## Purpose
 
-`layup-parser` walks source packages and emits a `DiagramState` JSON object consumable by the Layup diagramming tool. The output represents the package's class structure as a C4-model diagram with `component` (module) and `code` (class) levels. The tool is designed to be embedded as a library or invoked via CLI.
+`layup-parser` walks source packages and emits a `NodeSubtreeExport` JSON object consumable by the Layup diagramming tool. The output represents the package's class structure as a C4-model diagram with `component` (module) and `code` (class) levels. The tool is designed to be embedded as a library or invoked via CLI.
 
 ## Tech Stack
 
 - **Python 3.10+**, stdlib only in the core pipeline (`ast`, `dataclasses`, `pathlib`) — keeps the parser dependency-free at runtime
 - **click** — CLI argument parsing (`layup-parse` entry point)
-- **jsonschema** — output validation against the bundled `schema/diagram.schema.json`; validates the emitter stays in sync with the schema, not user input
+- **jsonschema** — output validation against the bundled `schema/nodeSubtree.schema.json`; validates the emitter stays in sync with the schema, not user input
 
 ## Directory Layout
 
@@ -29,9 +29,9 @@ layup_parser/
   layout/
     hierarchical.py    # Grid layout engine → Position(x, y) per node
   emitter/
-    layup.py           # Converts IR + edges + positions → DiagramState dict
+    layup.py           # Converts IR + edges + positions → NodeSubtreeExport dict
 schema/
-  diagram.schema.json  # JSON Schema for DiagramState (v2); bundled with package
+  nodeSubtree.schema.json  # JSON Schema for NodeSubtreeExport (v1); bundled with package
 docs/                  # Architecture and contributor documentation
 tests/
   fixtures/            # Sample Python packages used as test inputs
@@ -77,13 +77,13 @@ resolve_inheritance(package)  # raw base names → InheritanceEdge list + warnin
 resolve_usage(package)        # type annotations → UsageEdge list + warnings
     │
     ▼
-emit_diagram_state(...)       # IR + edges → layout positions → DiagramState dict
+emit_diagram_state(...)       # IR + edges → layout positions → NodeSubtreeExport dict
     │
     ▼
 jsonschema.validate(state)    # optional; guards against emitter regressions
     │
     ▼
-DiagramState dict / JSON file
+NodeSubtreeExport dict / JSON file
 ```
 
 ## Invariants / Constraints
@@ -94,4 +94,4 @@ DiagramState dict / JSON file
 - **IDs must be stable and globally unique** within a single parse run. The Python parser derives IDs from dotted module paths; new language parsers must guarantee the same.
 - **Adding a language parser requires only two changes:** create `parser/<lang>/` implementing `LanguageParser`, and add an entry to `_PARSERS` in `parser/__init__.py`. The rest of the pipeline is language-agnostic.
 - **Schema version is a single source of truth** in `_schema_path.py` (`SCHEMA_VERSION`). The emitter reads it; do not hardcode it elsewhere.
-- **`root_label` is ignored by the v2 emitter** (`DiagramLevel` has no label field). The parameter exists only for call-site backwards compatibility.
+- **`root_label` is ignored by the emitter** (`NodeSubtreeExport` has no label field). The parameter exists only for call-site backwards compatibility.

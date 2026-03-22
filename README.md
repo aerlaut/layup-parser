@@ -1,6 +1,6 @@
 # layup-parser
 
-A multi-language source importer for [Layup](https://github.com/aerlaut/layup) — parses a source package's structure and exports it as a Layup `DiagramState` JSON, ready to be imported into Layup for diagramming.
+A multi-language source importer for [Layup](https://github.com/aerlaut/layup) — parses a source package's structure and exports it as a Layup `NodeSubtreeExport` JSON, ready to be imported into Layup for diagramming.
 
 Currently supports **Python**. The architecture is designed for additional languages to be added as parser backends (see [Adding a language](#adding-a-language)).
 
@@ -60,7 +60,7 @@ layup-parse ./mypkg --root-label "My Service" --ignore tests --no-validate
 ```python
 from layup_parser import parse_package, parse_package_to_file
 
-# Returns a DiagramState dict (defaults to lang="python")
+# Returns a NodeSubtreeExport dict (defaults to lang="python")
 diagram = parse_package("/path/to/mypkg")
 
 # Specify the language explicitly
@@ -104,7 +104,7 @@ walk + extract     →    resolve edges    →   position  →   emit JSON
 1. **Walk + Extract** — A `LanguageParser` backend discovers source files in the root directory and extracts classes, members, and inheritance bases into a language-agnostic intermediate representation (IR).
 2. **Relationship resolution** — Inheritance base names are resolved to concrete IR nodes and tagged as same-module or cross-module edges.
 3. **Layout** — Nodes are assigned positions using a hierarchical algorithm.
-4. **Emission** — The IR is serialised to a Layup `DiagramState` JSON (v2 schema).
+4. **Emission** — The IR is serialised to a Layup `NodeSubtreeExport` JSON (v1 schema).
 
 Only stage 1 differs between languages. Stages 2–4 are shared across all backends.
 
