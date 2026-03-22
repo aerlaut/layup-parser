@@ -92,7 +92,7 @@ def main(
     indent: int,
     ignore_dirs: tuple[str, ...],
 ) -> None:
-    """Parse a source package at PATH and emit a Layup DiagramState JSON.
+    """Parse a source package at PATH and emit a Layup NodeSubtreeExport JSON.
 
     Cross-module inheritance edges are not rendered in the output (v1
     limitation) but are reported as warnings on stderr.

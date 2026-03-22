@@ -69,12 +69,12 @@ class TestCliBasicUsage:
 
 class TestCliOptions:
     def test_root_label(self, runner):
-        # root_label is accepted but silently ignored in v2 (DiagramLevel has no label)
+        # root_label is accepted but silently ignored (NodeSubtreeExport has no label field)
         result = runner.invoke(main, [str(SAMPLE_PKG), "--root-label", "My Diagram"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert "levels" in data
-        assert data["currentLevel"] == "component"
+        assert data["rootLevel"] == "component"
 
     def test_indent_option(self, runner):
         result = runner.invoke(main, [str(SAMPLE_PKG), "--indent", "4"])
