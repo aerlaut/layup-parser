@@ -32,13 +32,18 @@ class TestParsePackage:
         result = parse_package(SAMPLE_PKG)
         jsonschema.validate(result, _SCHEMA)
 
-    def test_current_level_is_component(self):
+    def test_export_type(self):
         result = parse_package(SAMPLE_PKG)
-        assert result["currentLevel"] == "component"
+        assert result["exportType"] == "node-subtree"
 
-    def test_four_fixed_levels(self):
+    def test_root_level_is_component(self):
         result = parse_package(SAMPLE_PKG)
-        assert set(result["levels"].keys()) == {"context", "container", "component", "code"}
+        assert result["rootLevel"] == "component"
+
+    def test_component_and_code_levels_present(self):
+        result = parse_package(SAMPLE_PKG)
+        assert "component" in result["levels"]
+        assert "code" in result["levels"]
 
     def test_invalid_path_raises(self):
         with pytest.raises(ValueError):
@@ -138,7 +143,7 @@ class TestParsePackageLang:
         """Passing lang='python' explicitly must work identically to the default."""
         result = parse_package(SAMPLE_PKG, lang="python")
         assert isinstance(result, dict)
-        assert result["currentLevel"] == "component"
+        assert result["rootLevel"] == "component"
 
     def test_unsupported_lang_raises(self):
         with pytest.raises(ValueError, match="Unsupported language"):

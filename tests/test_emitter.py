@@ -1,4 +1,4 @@
-"""Tests for the Layup DiagramState emitter (v2 schema)."""
+"""Tests for the Layup NodeSubtreeExport emitter (v1 schema)."""
 
 from __future__ import annotations
 
@@ -87,42 +87,37 @@ def _simple_edges(pkg: ParsedPackage) -> list[InheritanceEdge]:
 
 
 # ---------------------------------------------------------------------------
-# Top-level DiagramState structure
+# Top-level NodeSubtreeExport structure
 # ---------------------------------------------------------------------------
 
 
-class TestDiagramStateStructure:
+class TestNodeSubtreeStructure:
     def setup_method(self):
         self.pkg = _simple_package()
         self.edges = _simple_edges(self.pkg)
         self.state = emit_diagram_state(self.pkg, self.edges)
 
+    def test_export_type(self):
+        assert self.state["exportType"] == "node-subtree"
+
     def test_version(self):
         assert self.state["version"] == SCHEMA_VERSION
 
-    def test_current_level_is_component(self):
-        assert self.state["currentLevel"] == "component"
-
-    def test_selected_id_null(self):
-        assert self.state["selectedId"] is None
-
-    def test_pending_node_type_null(self):
-        assert self.state["pendingNodeType"] is None
+    def test_root_level_is_component(self):
+        assert self.state["rootLevel"] == "component"
 
     def test_levels_key_present(self):
         assert "levels" in self.state
 
-    def test_four_fixed_levels(self):
-        assert set(self.state["levels"].keys()) == {"context", "container", "component", "code"}
+    def test_component_and_code_levels_present(self):
+        assert "component" in self.state["levels"]
+        assert "code" in self.state["levels"]
 
-    def test_no_root_id(self):
-        assert "rootId" not in self.state
+    def test_no_selected_id(self):
+        assert "selectedId" not in self.state
 
-    def test_no_navigation_stack(self):
-        assert "navigationStack" not in self.state
-
-    def test_no_diagrams_key(self):
-        assert "diagrams" not in self.state
+    def test_no_pending_node_type(self):
+        assert "pendingNodeType" not in self.state
 
     def test_schema_valid(self):
         _validate(self.state)
@@ -161,8 +156,8 @@ class TestComponentLevel:
     def test_no_edges(self):
         assert self.level["edges"] == []
 
-    def test_empty_annotations(self):
-        assert self.level["annotations"] == []
+    def test_no_annotations_key(self):
+        assert "annotations" not in self.level
 
 
 # ---------------------------------------------------------------------------
@@ -216,37 +211,25 @@ class TestCodeLevel:
         for m in child_node["members"]:
             assert m["visibility"] == "+"
 
-    def test_no_annotations(self):
-        assert self.level["annotations"] == []
+    def test_no_annotations_key(self):
+        assert "annotations" not in self.level
 
 
 # ---------------------------------------------------------------------------
-# Empty levels (context + container always present and always empty)
+# Omitted levels (context + container not emitted — always empty for our output)
 # ---------------------------------------------------------------------------
 
 
-class TestEmptyLevels:
+class TestOmittedLevels:
     def setup_method(self):
         self.pkg = _simple_package()
         self.state = emit_diagram_state(self.pkg, _simple_edges(self.pkg))
 
-    def test_context_level_present(self):
-        assert "context" in self.state["levels"]
+    def test_context_level_absent(self):
+        assert "context" not in self.state["levels"]
 
-    def test_container_level_present(self):
-        assert "container" in self.state["levels"]
-
-    def test_context_nodes_empty(self):
-        assert self.state["levels"]["context"]["nodes"] == []
-
-    def test_context_edges_empty(self):
-        assert self.state["levels"]["context"]["edges"] == []
-
-    def test_container_nodes_empty(self):
-        assert self.state["levels"]["container"]["nodes"] == []
-
-    def test_container_edges_empty(self):
-        assert self.state["levels"]["container"]["edges"] == []
+    def test_container_level_absent(self):
+        assert "container" not in self.state["levels"]
 
 
 # ---------------------------------------------------------------------------
