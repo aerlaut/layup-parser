@@ -18,6 +18,7 @@ layup_parser/
   cli.py               # click CLI entry point (layup-parse command)
   models.py            # IR dataclasses: ParsedPackage → ParsedModule → ParsedClass → ParsedMember
   relationships.py     # Resolves raw base-class strings into InheritanceEdge objects
+  usage.py             # Resolves type annotation strings into UsageEdge objects
   _schema_path.py      # Resolves bundled schema path; exports SCHEMA_VERSION
   parser/
     base.py            # LanguageParser Protocol definition
@@ -51,6 +52,11 @@ InheritanceEdge                         (resolved after walking)
   ├── source_id → child ParsedClass.id
   ├── target_id → parent ParsedClass.id
   └── cross_module: bool
+
+UsageEdge                               (resolved after walking)
+  ├── source_id → dependent ParsedClass.id
+  ├── target_id → used ParsedClass.id
+  └── cross_module: bool
 ```
 
 IDs are stable dotted-path strings (e.g., `mypkg.utils.MyClass`). They are used as node IDs in the emitted JSON.
@@ -68,6 +74,7 @@ LanguageParser.parse(root)    # walk files → extract AST → populate IR
     │                           (language-specific; only python/ exists today)
     ▼
 resolve_inheritance(package)  # raw base names → InheritanceEdge list + warnings
+resolve_usage(package)        # type annotations → UsageEdge list + warnings
     │
     ▼
 emit_diagram_state(...)       # IR + edges → layout positions → DiagramState dict
@@ -81,8 +88,9 @@ DiagramState dict / JSON file
 
 ## Invariants / Constraints
 
-- **Cross-module inheritance edges are never rendered.** They are resolved and returned as string warnings (printed to stderr by the CLI/API). The emitter only serialises same-module edges. This is a deliberate design choice, not an omission.
+- **`cross_module` is an informational flag** on both `InheritanceEdge` and `UsageEdge`. All resolved edges are rendered regardless of module boundary.
 - **Base class names are dropped if unresolvable.** Stdlib, third-party, and unknown base classes produce no phantom nodes and no errors — they are silently discarded during relationship resolution.
+- **Usage edges are derived from static type annotations only** (attribute types, return types, parameter types). Runtime instantiation and method-call analysis is out of scope.
 - **IDs must be stable and globally unique** within a single parse run. The Python parser derives IDs from dotted module paths; new language parsers must guarantee the same.
 - **Adding a language parser requires only two changes:** create `parser/<lang>/` implementing `LanguageParser`, and add an entry to `_PARSERS` in `parser/__init__.py`. The rest of the pipeline is language-agnostic.
 - **Schema version is a single source of truth** in `_schema_path.py` (`SCHEMA_VERSION`). The emitter reads it; do not hardcode it elsewhere.
