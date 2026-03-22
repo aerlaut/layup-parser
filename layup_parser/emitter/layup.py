@@ -18,11 +18,7 @@ Output structure (v2)
         ├── "context"   (empty DiagramLevel)
         ├── "container" (empty DiagramLevel)
         ├── "component" (one node per module)
-        └── "code"      (one node per class with parentNodeId; same-module edges)
-
-Cross-module inheritance edges are **not rendered** (they are returned as
-warnings by the relationship resolver and should be surfaced to the user via
-the CLI / API).
+        └── "code"      (one node per class with parentNodeId; all resolved edges)
 """
 
 from __future__ import annotations
@@ -42,6 +38,7 @@ from layup_parser.models import (
     ParsedMember,
     ParsedModule,
     ParsedPackage,
+    UsageEdge,
 )
 
 # ---------------------------------------------------------------------------
@@ -60,6 +57,10 @@ _NODE_TYPE_MAP: dict[NodeType, str] = {
 # UML inheritance arrow: open hollow triangle at the parent end
 _INHERITANCE_MARKER_END = "hollow-triangle"
 _INHERITANCE_LINE_STYLE = "solid"
+
+# UML dependency arrow: dashed line with open arrow
+_USAGE_MARKER_END = "open-arrow"
+_USAGE_LINE_STYLE = "dashed"
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +136,16 @@ def _serialise_inheritance_edge(edge: InheritanceEdge) -> dict:
     }
 
 
+def _serialise_usage_edge(edge: UsageEdge) -> dict:
+    return {
+        "id": edge.id,
+        "source": edge.source_id,
+        "target": edge.target_id,
+        "markerEnd": _USAGE_MARKER_END,
+        "lineStyle": _USAGE_LINE_STYLE,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Level builders
 # ---------------------------------------------------------------------------
@@ -170,13 +181,14 @@ def _build_component_level(
 
 def _build_code_level(
     package: ParsedPackage,
-    same_module_edges_by_mod: dict[str, list[InheritanceEdge]],
+    edges_by_mod: dict[str, list[InheritanceEdge]],
     class_positions_by_mod: dict[str, dict[str, Position]],
+    usage_edges: list[UsageEdge] = (),
 ) -> dict:
     """Build a unified code-level DiagramLevel across all modules.
 
     Each class node carries ``parentNodeId`` set to its owning module's id.
-    Only same-module inheritance edges are included.
+    All resolved inheritance and usage edges are included.
     """
     all_nodes: list[dict] = []
     all_edges: list[dict] = []
@@ -192,8 +204,11 @@ def _build_code_level(
                         parent_node_id=mod.id,
                     )
                 )
-        for edge in same_module_edges_by_mod.get(mod.id, []):
+        for edge in edges_by_mod.get(mod.id, []):
             all_edges.append(_serialise_inheritance_edge(edge))
+
+    for edge in usage_edges:
+        all_edges.append(_serialise_usage_edge(edge))
 
     return {
         "level": "code",
@@ -212,6 +227,7 @@ def emit_diagram_state(
     package: ParsedPackage,
     edges: list[InheritanceEdge],
     *,
+    usage_edges: list[UsageEdge] = (),
     root_label: str | None = None,
 ) -> dict:
     """Build a Layup-compatible ``DiagramState`` dict (v2 schema).
@@ -222,8 +238,11 @@ def emit_diagram_state(
         A fully-populated :class:`~layup_parser.models.ParsedPackage`.
     edges:
         Resolved :class:`~layup_parser.models.InheritanceEdge` list from the
-        relationship resolver.  Cross-module edges are automatically excluded
-        from rendering.
+        relationship resolver.  All edges are rendered regardless of
+        ``cross_module`` flag.
+    usage_edges:
+        Resolved :class:`~layup_parser.models.UsageEdge` list from the usage
+        resolver.  Serialised with dashed line and open-arrow marker.
     root_label:
         Unused in v2 (DiagramLevel no longer has a label field). Kept for
         backwards-compatible call sites; the argument is silently ignored.
@@ -236,29 +255,30 @@ def emit_diagram_state(
     # --- Layout ---
     module_positions = layout_modules(package.modules)
 
-    # Group edges by module: only same-module edges are rendered
-    same_module_edges_by_mod: dict[str, list[InheritanceEdge]] = {
+    # Group edges by source module (used for layout and serialisation)
+    edges_by_mod: dict[str, list[InheritanceEdge]] = {
         mod.id: [] for mod in package.modules
     }
     for edge in edges:
-        if not edge.cross_module:
-            for mod in package.modules:
-                if any(cls.id == edge.source_id for cls in mod.classes):
-                    same_module_edges_by_mod[mod.id].append(edge)
-                    break
+        for mod in package.modules:
+            if any(cls.id == edge.source_id for cls in mod.classes):
+                edges_by_mod[mod.id].append(edge)
+                break
 
-    # Layout classes per module (positions merged into the unified code level)
+    # Layout classes per module using same-module edges only (cross-module
+    # edges still render correctly since both endpoint nodes exist in the
+    # unified code level)
     class_positions_by_mod: dict[str, dict[str, Position]] = {}
     for mod in package.modules:
-        mod_edges = same_module_edges_by_mod.get(mod.id, [])
-        class_positions_by_mod[mod.id] = layout_classes(mod.classes, mod_edges)
+        same_mod_edges = [e for e in edges_by_mod.get(mod.id, []) if not e.cross_module]
+        class_positions_by_mod[mod.id] = layout_classes(mod.classes, same_mod_edges)
 
     # --- Assemble levels ---
     levels = {
         "context": _empty_level("context"),
         "container": _empty_level("container"),
         "component": _build_component_level(package, module_positions),
-        "code": _build_code_level(package, same_module_edges_by_mod, class_positions_by_mod),
+        "code": _build_code_level(package, edges_by_mod, class_positions_by_mod, usage_edges),
     }
 
     return {

@@ -15,8 +15,8 @@ Resolution strategy
 3. If B cannot be resolved (stdlib / third-party / unknown), the base is
    silently dropped — no phantom nodes.
 4. Cross-module edges (source and target in different modules) are recorded
-   with ``cross_module=True`` and reported via the returned warning list.  In
-   v1 the emitter does not render them, but callers can inspect or log them.
+   with ``cross_module=True`` and reported via the returned warning list.
+   All resolved edges are rendered by the emitter.
 """
 
 from __future__ import annotations
@@ -42,8 +42,8 @@ def resolve_inheritance(
     edges:
         List of resolved :class:`InheritanceEdge` objects.
     warnings:
-        Human-readable warning strings for cross-module edges (not rendered
-        in v1) and any other noteworthy resolution issues.
+        Human-readable warning strings for cross-module edges and any other
+        noteworthy resolution issues.
     """
     # ------------------------------------------------------------------
     # Build lookup: simple name → list of ParsedClass (ordered by module name
@@ -94,7 +94,7 @@ def resolve_inheritance(
 
                 if cross:
                     warnings.append(
-                        f"Cross-module inheritance (not rendered): "
+                        f"Cross-module inheritance: "
                         f"{cls.id} → {target.id}"
                     )
 

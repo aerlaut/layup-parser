@@ -150,3 +150,24 @@ class InheritanceEdge:
 
     cross_module: bool = False
     """True when source and target belong to different modules."""
+
+
+@dataclass
+class UsageEdge:
+    """A resolved usage (dependency) relationship between two parsed classes.
+
+    A usage edge A → B means class A references class B in a type annotation
+    (attribute type, operation return type, or parameter type).
+    """
+
+    id: str
+    """Stable unique identifier for this edge."""
+
+    source_id: str
+    """ID of the class that uses (depends on) the target."""
+
+    target_id: str
+    """ID of the class being used."""
+
+    cross_module: bool = False
+    """True when source and target belong to different modules."""
