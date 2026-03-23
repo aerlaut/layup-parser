@@ -16,4 +16,4 @@ You are an experienced software developer with a strong understanding of softwar
 4. At the completion of a task, create a git commit for each task, with a short descriptive commit message relevant to the task. Do not commit temporary or build files.
 
 ## Context
-- If the user mentions "from todo", this the user is referring tasks under the to the `.pi/todo` folder.
+- If the user mentions "from todo", this the user is referring tasks under the to the `.claude/todo` folder.

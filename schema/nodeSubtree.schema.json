@@ -1,70 +1,7 @@
 {
-  "$ref": "#/definitions/DiagramState",
+  "$ref": "#/definitions/NodeSubtreeExport",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
-    "Annotation": {
-      "additionalProperties": false,
-      "description": "A free-floating annotative element. Annotations are stored separately from C4 nodes and are never subject to boundary grouping, overlap resolution, or drill-down navigation. They can be placed anywhere on the canvas.",
-      "properties": {
-        "color": {
-          "description": "Custom color (hex)",
-          "type": "string"
-        },
-        "height": {
-          "description": "Explicit pixel height (for group boundary box)",
-          "type": "number"
-        },
-        "id": {
-          "type": "string"
-        },
-        "label": {
-          "type": "string"
-        },
-        "position": {
-          "additionalProperties": false,
-          "properties": {
-            "x": {
-              "type": "number"
-            },
-            "y": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "x",
-            "y"
-          ],
-          "type": "object"
-        },
-        "text": {
-          "description": "Body text — used by \"note\" (post-it) annotations",
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/AnnotationType"
-        },
-        "width": {
-          "description": "Explicit pixel width (for group boundary box)",
-          "type": "number"
-        }
-      },
-      "required": [
-        "id",
-        "type",
-        "label",
-        "position"
-      ],
-      "type": "object"
-    },
-    "AnnotationType": {
-      "description": "Types for free-floating annotative elements that are not part of the C4 hierarchy",
-      "enum": [
-        "group",
-        "note",
-        "package"
-      ],
-      "type": "string"
-    },
     "C4Edge": {
       "additionalProperties": false,
       "properties": {
@@ -287,103 +224,6 @@
       ],
       "type": "object"
     },
-    "DiagramLevel": {
-      "additionalProperties": false,
-      "properties": {
-        "annotations": {
-          "description": "Free-floating annotative elements (groups, notes). Never affect C4 hierarchy.",
-          "items": {
-            "$ref": "#/definitions/Annotation"
-          },
-          "type": "array"
-        },
-        "edges": {
-          "items": {
-            "$ref": "#/definitions/C4Edge"
-          },
-          "type": "array"
-        },
-        "level": {
-          "$ref": "#/definitions/C4LevelType"
-        },
-        "nodes": {
-          "items": {
-            "$ref": "#/definitions/C4Node"
-          },
-          "type": "array"
-        }
-      },
-      "required": [
-        "level",
-        "nodes",
-        "edges",
-        "annotations"
-      ],
-      "type": "object"
-    },
-    "DiagramState": {
-      "additionalProperties": false,
-      "properties": {
-        "currentLevel": {
-          "$ref": "#/definitions/C4LevelType",
-          "description": "The currently visible level"
-        },
-        "levels": {
-          "additionalProperties": false,
-          "description": "Four fixed levels keyed by C4LevelType",
-          "properties": {
-            "code": {
-              "$ref": "#/definitions/DiagramLevel"
-            },
-            "component": {
-              "$ref": "#/definitions/DiagramLevel"
-            },
-            "container": {
-              "$ref": "#/definitions/DiagramLevel"
-            },
-            "context": {
-              "$ref": "#/definitions/DiagramLevel"
-            }
-          },
-          "required": [
-            "context",
-            "container",
-            "component",
-            "code"
-          ],
-          "type": "object"
-        },
-        "pendingNodeType": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PaletteItemType"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "If true, user is in \"pending place\" mode after clicking palette"
-        },
-        "selectedId": {
-          "description": "Currently selected node or edge ID, or null",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "version": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "version",
-        "levels",
-        "currentLevel",
-        "selectedId",
-        "pendingNodeType"
-      ],
-      "type": "object"
-    },
     "LineStyle": {
       "enum": [
         "solid",
@@ -422,16 +262,76 @@
       ],
       "type": "string"
     },
-    "PaletteItemType": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/C4NodeType"
+    "NodeSubtreeExport": {
+      "additionalProperties": false,
+      "properties": {
+        "exportType": {
+          "const": "node-subtree",
+          "description": "Distinguishes this format from a full DiagramState export.",
+          "type": "string"
         },
-        {
-          "$ref": "#/definitions/AnnotationType"
+        "levels": {
+          "additionalProperties": false,
+          "description": "Data for rootLevel and every level below it. levels[rootLevel].nodes[0] is always the root node, with parentNodeId stripped (undefined) so it can be re-parented on import. Edges at rootLevel are excluded because they connect to nodes outside the subtree. Edges at descendant levels are included only when both the source and target node are within the subtree.",
+          "properties": {
+            "code": {
+              "$ref": "#/definitions/NodeSubtreeLevelData"
+            },
+            "component": {
+              "$ref": "#/definitions/NodeSubtreeLevelData"
+            },
+            "container": {
+              "$ref": "#/definitions/NodeSubtreeLevelData"
+            },
+            "context": {
+              "$ref": "#/definitions/NodeSubtreeLevelData"
+            }
+          },
+          "type": "object"
+        },
+        "rootLevel": {
+          "$ref": "#/definitions/C4LevelType",
+          "description": "The C4 level at which the root node lives."
+        },
+        "version": {
+          "const": 1,
+          "description": "Bump when the format changes in a breaking way.",
+          "type": "number"
         }
+      },
+      "required": [
+        "exportType",
+        "version",
+        "rootLevel",
+        "levels"
       ],
-      "description": "Combined type used by the palette and pending-placement state"
+      "type": "object"
+    },
+    "NodeSubtreeLevelData": {
+      "additionalProperties": false,
+      "properties": {
+        "edges": {
+          "items": {
+            "$ref": "#/definitions/C4Edge"
+          },
+          "type": "array"
+        },
+        "level": {
+          "$ref": "#/definitions/C4LevelType"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/definitions/C4Node"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "level",
+        "nodes",
+        "edges"
+      ],
+      "type": "object"
     },
     "TableColumn": {
       "additionalProperties": false,
